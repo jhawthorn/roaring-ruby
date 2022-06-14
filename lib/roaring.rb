@@ -2,6 +2,7 @@
 
 require_relative "roaring/version"
 require_relative "roaring/roaring"
+require "set"
 
 module Roaring
   class Error < StandardError; end
@@ -36,6 +37,10 @@ module Roaring
 
     def to_a
       map(&:itself)
+    end
+
+    def to_set
+      ::Set.new(to_a)
     end
 
     def inspect
