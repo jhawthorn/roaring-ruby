@@ -6,16 +6,22 @@ PATH
 GEM
   remote: https://rubygems.org/
   specs:
+    forwardable (1.3.2)
     minitest (5.15.0)
+    prime (0.1.2)
+      forwardable
+      singleton
     rake (13.0.6)
     rake-compiler (1.2.0)
       rake
+    singleton (0.1.1)
 
 PLATFORMS
   x86_64-linux
 
 DEPENDENCIES
   minitest (~> 5.0)
+  prime
   rake (~> 13.0)
   rake-compiler
   roaring!
