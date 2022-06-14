@@ -1,4 +1,4 @@
-#include "roaring.h"
+#include "ruby.h"
 
 VALUE rb_mRoaring;
 
