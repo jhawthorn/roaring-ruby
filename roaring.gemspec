@@ -11,7 +11,7 @@ Gem::Specification.new do |spec|
   spec.summary = "placeholder"
   spec.description = spec.summary
   spec.homepage = "https://github.com/jhawthorn/roaring-ruby"
-  spec.license = "MIT"
+  spec.license = "Apache-2.0"
   spec.required_ruby_version = ">= 2.6.0"
 
   spec.metadata["source_code_uri"] = spec.metadata["changelog_uri"] = spec.metadata["homepage_uri"] = spec.homepage
