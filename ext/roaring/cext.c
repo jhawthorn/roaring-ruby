@@ -52,6 +52,15 @@ static VALUE rb_roaring_add(VALUE self, VALUE val)
     return self;
 }
 
+static VALUE rb_roaring_include_p(VALUE self, VALUE val)
+{
+    roaring_bitmap_t *data;
+    TypedData_Get_Struct(self, roaring_bitmap_t, &roaring_type, data);
+
+    uint32_t num = NUM2UINT(val);
+    return roaring_bitmap_contains(data, num) ? Qtrue : Qfalse;
+}
+
 static VALUE rb_roaring_empty_p(VALUE self)
 {
     roaring_bitmap_t *data;
@@ -154,6 +163,7 @@ Init_roaring(void)
   rb_define_method(cRoaringBitmap, "cardinality", rb_roaring_cardinality, 0);
   rb_define_method(cRoaringBitmap, "add", rb_roaring_add, 1);
   rb_define_method(cRoaringBitmap, "<<", rb_roaring_add, 1);
+  rb_define_method(cRoaringBitmap, "include?", rb_roaring_include_p, 1);
   rb_define_method(cRoaringBitmap, "each", rb_roaring_each, 0);
 
   rb_define_method(cRoaringBitmap, "&", rb_roaring_and, 1);

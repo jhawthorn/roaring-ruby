@@ -53,6 +53,14 @@ class TestRoaring < Minitest::Test
     end
   end
 
+  def test_include
+    bitmap = Roaring::Bitmap.new
+    bitmap << 1 << 2 << 5 << 7
+
+    result = (0..10).select {|x| bitmap.include?(x) }
+    assert_equal [1, 2, 5, 7], result
+  end
+
   def test_each
     bitmap = Roaring::Bitmap.new
     bitmap << 1 << 2 << 5 << 7
