@@ -54,16 +54,14 @@ class TestRoaring < Minitest::Test
   end
 
   def test_include
-    bitmap = Roaring::Bitmap.new
-    bitmap << 1 << 2 << 5 << 7
+    bitmap = Roaring::Bitmap[1, 2, 5, 7]
 
     result = (0..10).select {|x| bitmap.include?(x) }
     assert_equal [1, 2, 5, 7], result
   end
 
   def test_each
-    bitmap = Roaring::Bitmap.new
-    bitmap << 1 << 2 << 5 << 7
+    bitmap = Roaring::Bitmap[1, 2, 5, 7]
     result = []
     bitmap.each do |x|
       result << x
@@ -72,8 +70,7 @@ class TestRoaring < Minitest::Test
   end
 
   def test_each_with_break
-    bitmap = Roaring::Bitmap.new
-    bitmap << 1 << 2 << 3
+    bitmap = Roaring::Bitmap[1, 2, 3]
     result = bitmap.each do
       break 123
     end
@@ -81,19 +78,15 @@ class TestRoaring < Minitest::Test
   end
 
   def test_map
-    bitmap = Roaring::Bitmap.new
-    bitmap << 1 << 2 << 5 << 7
+    bitmap = Roaring::Bitmap[1, 2, 5, 7]
     result = bitmap.map(&:itself)
     assert_equal [1, 2, 5, 7], result
   end
 
   def test_eq
-    r1 = Roaring::Bitmap.new
-    r2 = Roaring::Bitmap.new
-    r3 = Roaring::Bitmap.new
-    r1 << 1 << 2 << 3 << 4
-    r2 << 1 << 2 << 3 << 4
-    r3 << 1 << 2 << 3
+    r1 = Roaring::Bitmap[1, 2, 3, 4]
+    r2 = Roaring::Bitmap[1, 2, 3, 4]
+    r3 = Roaring::Bitmap[1, 2, 3]
 
     assert_equal r1, r1
     assert_equal r1, r2
@@ -103,10 +96,8 @@ class TestRoaring < Minitest::Test
   end
 
   def test_comparisons
-    r1 = Roaring::Bitmap.new
-    r2 = Roaring::Bitmap.new
-    r1 << 1 << 2 << 3 << 4
-    r2 << 1 << 2 << 3
+    r1 = Roaring::Bitmap[1, 2, 3, 4]
+    r2 = Roaring::Bitmap[1, 2, 3]
 
     assert r1 <= r1
     assert r1 >= r1
@@ -125,37 +116,29 @@ class TestRoaring < Minitest::Test
   end
 
   def test_and
-    r1 = Roaring::Bitmap.new
-    r2 = Roaring::Bitmap.new
-    r1 << 1 << 2 << 3 << 4
-    r2 << 3 << 4 << 5 << 6
+    r1 = Roaring::Bitmap[1, 2, 3, 4]
+    r2 = Roaring::Bitmap[3, 4, 5, 6]
     result = r1 & r2
     assert_equal [3, 4], result.to_a
   end
 
   def test_or
-    r1 = Roaring::Bitmap.new
-    r2 = Roaring::Bitmap.new
-    r1 << 1 << 2 << 3 << 4
-    r2 << 3 << 4 << 5 << 6
+    r1 = Roaring::Bitmap[1, 2, 3, 4]
+    r2 = Roaring::Bitmap[3, 4, 5, 6]
     result = r1 | r2
     assert_equal [1, 2, 3, 4, 5, 6], result.to_a
   end
 
   def test_xor
-    r1 = Roaring::Bitmap.new
-    r2 = Roaring::Bitmap.new
-    r1 << 1 << 2 << 3 << 4
-    r2 << 3 << 4 << 5 << 6
+    r1 = Roaring::Bitmap[1, 2, 3, 4]
+    r2 = Roaring::Bitmap[3, 4, 5, 6]
     result = r1 ^ r2
     assert_equal [1, 2, 5, 6], result.to_a
   end
 
   def test_difference
-    r1 = Roaring::Bitmap.new
-    r2 = Roaring::Bitmap.new
-    r1 << 1 << 2 << 3 << 4
-    r2 << 3 << 4 << 5 << 6
+    r1 = Roaring::Bitmap[1, 2, 3, 4]
+    r2 = Roaring::Bitmap[3, 4, 5, 6]
     result = r1 - r2
     assert_equal [1, 2], result.to_a
   end
@@ -170,19 +153,16 @@ class TestRoaring < Minitest::Test
   end
 
   def test_aref
-    bitmap = Roaring::Bitmap.new
-    bitmap << 1 << 2 << 3 << 4
+    bitmap = Roaring::Bitmap[1, 2, 99]
     assert_equal 1, bitmap[0]
     assert_equal 2, bitmap[1]
-    assert_equal 3, bitmap[2]
-    assert_equal 4, bitmap[3]
-    assert_nil bitmap[4]
+    assert_equal 99, bitmap[2]
+    assert_nil bitmap[3]
     assert_nil bitmap[9999]
   end
 
   def test_serialize
-    original = Roaring::Bitmap.new
-    original << 1 << 2 << 3 << 4
+    original = Roaring::Bitmap[1, 2, 3, 4]
 
     dump = original.serialize
     bitmap = Roaring::Bitmap.deserialize(dump)
@@ -191,8 +171,7 @@ class TestRoaring < Minitest::Test
   end
 
   def test_marshal
-    original = Roaring::Bitmap.new
-    original << 1 << 2 << 3 << 4
+    original = Roaring::Bitmap[1, 2, 3, 4]
 
     dump = Marshal.dump(original)
     bitmap = Marshal.load(dump)
@@ -201,8 +180,7 @@ class TestRoaring < Minitest::Test
   end
 
   def test_dup
-    r1 = Roaring::Bitmap.new
-    r1 << 1 << 2 << 3 << 4
+    r1 = Roaring::Bitmap[1, 2, 3, 4]
 
     assert_equal r1.dup, r1
     assert_equal r1.clone, r1

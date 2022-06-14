@@ -19,6 +19,26 @@ module Roaring
     alias first min
     alias last max
 
+    def initialize(enum = nil)
+      return unless enum
+
+      if enum.instance_of?(Roaring::Bitmap)
+        initialize_copy(enum)
+      else
+        enum.each { |x| self << x }
+      end
+    end
+
+    def self.[](*args)
+      if args.size == 0
+        new(args)
+      elsif args.size == 1 && Integer === args[0]
+        new(args[0])
+      else
+        new(args)
+      end
+    end
+
     def >(other)
       other < self
     end
