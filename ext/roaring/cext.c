@@ -83,30 +83,32 @@ static VALUE rb_roaring_each(VALUE self)
     return self;
 }
 
-static VALUE rb_roaring_and(VALUE self, VALUE other)
-{
+typedef roaring_bitmap_t *binary_func(const roaring_bitmap_t *, const roaring_bitmap_t *);
+static VALUE rb_roaring_binary_op(VALUE self, VALUE other, binary_func func) {
     roaring_bitmap_t *self_data;
     TypedData_Get_Struct(self, roaring_bitmap_t, &roaring_type, self_data);
 
     roaring_bitmap_t *other_data;
     TypedData_Get_Struct(other, roaring_bitmap_t, &roaring_type, other_data);
 
-    roaring_bitmap_t *result = roaring_bitmap_and(self_data, other_data);
+    roaring_bitmap_t *result = func(self_data, other_data);
 
     return TypedData_Wrap_Struct(cRoaringBitmap, &roaring_type, result);
 }
 
+static VALUE rb_roaring_and(VALUE self, VALUE other)
+{
+    return rb_roaring_binary_op(self, other, roaring_bitmap_and);
+}
+
 static VALUE rb_roaring_or(VALUE self, VALUE other)
 {
-    roaring_bitmap_t *self_data;
-    TypedData_Get_Struct(self, roaring_bitmap_t, &roaring_type, self_data);
+    return rb_roaring_binary_op(self, other, roaring_bitmap_or);
+}
 
-    roaring_bitmap_t *other_data;
-    TypedData_Get_Struct(other, roaring_bitmap_t, &roaring_type, other_data);
-
-    roaring_bitmap_t *result = roaring_bitmap_or(self_data, other_data);
-
-    return TypedData_Wrap_Struct(cRoaringBitmap, &roaring_type, result);
+static VALUE rb_roaring_xor(VALUE self, VALUE other)
+{
+    return rb_roaring_binary_op(self, other, roaring_bitmap_xor);
 }
 
 void
@@ -125,4 +127,5 @@ Init_roaring(void)
 
   rb_define_method(cRoaringBitmap, "&", rb_roaring_and, 1);
   rb_define_method(cRoaringBitmap, "|", rb_roaring_or, 1);
+  rb_define_method(cRoaringBitmap, "^", rb_roaring_xor, 1);
 }
