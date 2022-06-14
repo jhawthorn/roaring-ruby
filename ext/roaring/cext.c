@@ -111,6 +111,11 @@ static VALUE rb_roaring_xor(VALUE self, VALUE other)
     return rb_roaring_binary_op(self, other, roaring_bitmap_xor);
 }
 
+static VALUE rb_roaring_andnot(VALUE self, VALUE other)
+{
+    return rb_roaring_binary_op(self, other, roaring_bitmap_andnot);
+}
+
 void
 Init_roaring(void)
 {
@@ -128,4 +133,5 @@ Init_roaring(void)
   rb_define_method(cRoaringBitmap, "&", rb_roaring_and, 1);
   rb_define_method(cRoaringBitmap, "|", rb_roaring_or, 1);
   rb_define_method(cRoaringBitmap, "^", rb_roaring_xor, 1);
+  rb_define_method(cRoaringBitmap, "-", rb_roaring_andnot, 1);
 }

@@ -96,4 +96,13 @@ class TestRoaring < Minitest::Test
     result = r1 ^ r2
     assert_equal [1, 2, 5, 6], result.to_a
   end
+
+  def test_difference
+    r1 = Roaring::Bitmap.new
+    r2 = Roaring::Bitmap.new
+    r1 << 1 << 2 << 3 << 4
+    r2 << 3 << 4 << 5 << 6
+    result = r1 - r2
+    assert_equal [1, 2], result.to_a
+  end
 end
