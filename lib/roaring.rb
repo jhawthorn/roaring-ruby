@@ -12,5 +12,13 @@ module Roaring
     alias size   cardinality
     alias length cardinality
     alias count  cardinality
+
+    def to_a
+      map(&:itself)
+    end
+
+    def inspect
+      "#<#{self.class} cardinality=#{cardinality}>"
+    end
   end
 end

@@ -69,4 +69,14 @@ class TestRoaring < Minitest::Test
     result = bitmap.map(&:itself)
     assert_equal [1, 2, 5, 7], result
   end
+
+  def test_and
+    r1 = Roaring::Bitmap.new
+    r2 = Roaring::Bitmap.new
+    r1 << 1 << 2 << 3 << 4
+    r2 << 3 << 4 << 5 << 6
+    result = r1 & r2
+    p result
+    assert_equal [3, 4], result.to_a
+  end
 end
