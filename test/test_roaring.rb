@@ -48,5 +48,25 @@ class TestRoaring < Minitest::Test
     assert_raises RangeError do
       bitmap << 2**65
     end
+    assert_raises RangeError do
+      bitmap << 2**33
+    end
+  end
+
+  def test_each
+    bitmap = Roaring::Bitmap.new
+    bitmap << 1 << 2 << 5 << 7
+    result = []
+    bitmap.each do |x|
+      result << x
+    end
+    assert_equal [1, 2, 5, 7], result
+  end
+
+  def test_map
+    bitmap = Roaring::Bitmap.new
+    bitmap << 1 << 2 << 5 << 7
+    result = bitmap.map(&:itself)
+    assert_equal [1, 2, 5, 7], result
   end
 end

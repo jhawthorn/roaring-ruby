@@ -7,6 +7,8 @@ module Roaring
   class Error < StandardError; end
 
   class Bitmap
+    include Enumerable
+
     alias size   cardinality
     alias length cardinality
     alias count  cardinality

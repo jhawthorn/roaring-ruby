@@ -46,7 +46,7 @@ static VALUE rb_roaring_add(VALUE self, VALUE val)
     roaring_bitmap_t *data;
     TypedData_Get_Struct(self, roaring_bitmap_t, &roaring_type, data);
 
-    uint64_t num = NUM2ULONG(val);
+    uint32_t num = NUM2UINT(val);
     roaring_bitmap_add(data, num);
     return self;
 }
@@ -68,6 +68,20 @@ static VALUE rb_roaring_clear(VALUE self)
     return self;
 }
 
+bool rb_roaring_each_i(uint32_t value, void *param) {
+    rb_yield(UINT2NUM(value));
+    return true;  // iterate till the end
+}
+
+static VALUE rb_roaring_each(VALUE self)
+{
+    roaring_bitmap_t *data;
+    TypedData_Get_Struct(self, roaring_bitmap_t, &roaring_type, data);
+
+    roaring_iterate(data, rb_roaring_each_i, NULL);
+    return self;
+}
+
 void
 Init_roaring(void)
 {
@@ -80,4 +94,5 @@ Init_roaring(void)
   rb_define_method(cRoaringBitmap, "cardinality", rb_roaring_cardinality, 0);
   rb_define_method(cRoaringBitmap, "add", rb_roaring_add, 1);
   rb_define_method(cRoaringBitmap, "<<", rb_roaring_add, 1);
+  rb_define_method(cRoaringBitmap, "each", rb_roaring_each, 0);
 }
