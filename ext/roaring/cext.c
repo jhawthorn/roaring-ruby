@@ -134,6 +134,27 @@ static VALUE rb_roaring_run_optimize(VALUE self)
     return roaring_bitmap_run_optimize(data) ? Qtrue : Qfalse;
 }
 
+static VALUE rb_roaring_serialize(VALUE self)
+{
+    roaring_bitmap_t *data;
+    TypedData_Get_Struct(self, roaring_bitmap_t, &roaring_type, data);
+
+    size_t size = roaring_bitmap_portable_size_in_bytes(data);
+    VALUE str = rb_str_buf_new(size);
+
+    size_t written = roaring_bitmap_portable_serialize(data, RSTRING_PTR(str));
+    rb_str_set_len(str, written);
+
+    return str;
+}
+
+static VALUE rb_roaring_deserialize(VALUE self, VALUE str)
+{
+    roaring_bitmap_t *bitmap = roaring_bitmap_portable_deserialize_safe(RSTRING_PTR(str), RSTRING_LEN(str));
+
+    return TypedData_Wrap_Struct(cRoaringBitmap, &roaring_type, bitmap);
+}
+
 typedef roaring_bitmap_t *binary_func(const roaring_bitmap_t *, const roaring_bitmap_t *);
 static VALUE rb_roaring_binary_op(VALUE self, VALUE other, binary_func func) {
     roaring_bitmap_t *self_data;
@@ -212,4 +233,7 @@ Init_roaring(void)
   rb_define_method(cRoaringBitmap, "max", rb_roaring_max, 0);
 
   rb_define_method(cRoaringBitmap, "run_optimize", rb_roaring_run_optimize, 0);
+
+  rb_define_method(cRoaringBitmap, "serialize", rb_roaring_serialize, 0);
+  rb_define_singleton_method(cRoaringBitmap, "deserialize", rb_roaring_deserialize, 1);
 }

@@ -158,6 +158,16 @@ class TestRoaring < Minitest::Test
     assert_nil bitmap[9999]
   end
 
+  def test_serialize
+    original = Roaring::Bitmap.new
+    original << 1 << 2 << 3 << 4
+
+    dump = original.serialize
+    bitmap = Roaring::Bitmap.deserialize(dump)
+
+    assert_equal original, bitmap
+  end
+
   def test_memsize
     require "objspace"
 
