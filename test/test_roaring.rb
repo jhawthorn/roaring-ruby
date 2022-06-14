@@ -102,6 +102,28 @@ class TestRoaring < Minitest::Test
     refute_equal r3, r1
   end
 
+  def test_comparisons
+    r1 = Roaring::Bitmap.new
+    r2 = Roaring::Bitmap.new
+    r1 << 1 << 2 << 3 << 4
+    r2 << 1 << 2 << 3
+
+    assert r1 <= r1
+    assert r1 >= r1
+    refute r1 < r1
+    refute r1 > r1
+
+    assert r2 < r1
+    assert r2 <= r1
+    refute r2 > r1
+    refute r2 >= r1
+
+    refute r1 < r2
+    refute r1 <= r2
+    assert r1 > r2
+    assert r1 >= r2
+  end
+
   def test_and
     r1 = Roaring::Bitmap.new
     r2 = Roaring::Bitmap.new

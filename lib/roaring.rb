@@ -18,6 +18,14 @@ module Roaring
     alias first min
     alias last max
 
+    def >(other)
+      other < self
+    end
+
+    def >=(other)
+      other <= self
+    end
+
     def to_a
       map(&:itself)
     end
