@@ -15,7 +15,7 @@ static size_t rb_roaring_memsize(const void *data)
 {
     // This is probably an estimate, "frozen" refers to the "frozen"
     // serialization format, which mimics the in-memory representation.
-    return roaring_bitmap_frozen_size_in_bytes(data);
+    return sizeof(roaring_bitmap_t) + roaring_bitmap_frozen_size_in_bytes(data);
 }
 
 static const rb_data_type_t roaring_type = {
@@ -101,6 +101,13 @@ static VALUE rb_roaring_max(VALUE self)
     return INT2NUM(val);
 }
 
+static VALUE rb_roaring_run_optimize(VALUE self)
+{
+    roaring_bitmap_t *data;
+    TypedData_Get_Struct(self, roaring_bitmap_t, &roaring_type, data);
+
+    return roaring_bitmap_run_optimize(data) ? Qtrue : Qfalse;
+}
 
 typedef roaring_bitmap_t *binary_func(const roaring_bitmap_t *, const roaring_bitmap_t *);
 static VALUE rb_roaring_binary_op(VALUE self, VALUE other, binary_func func) {
@@ -156,4 +163,6 @@ Init_roaring(void)
 
   rb_define_method(cRoaringBitmap, "min", rb_roaring_min, 0);
   rb_define_method(cRoaringBitmap, "max", rb_roaring_max, 0);
+
+  rb_define_method(cRoaringBitmap, "run_optimize", rb_roaring_run_optimize, 0);
 }

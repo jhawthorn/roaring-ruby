@@ -63,6 +63,15 @@ class TestRoaring < Minitest::Test
     assert_equal [1, 2, 5, 7], result
   end
 
+  def test_each_with_break
+    bitmap = Roaring::Bitmap.new
+    bitmap << 1 << 2 << 3
+    result = bitmap.each do
+      break 123
+    end
+    assert_equal 123, result
+  end
+
   def test_map
     bitmap = Roaring::Bitmap.new
     bitmap << 1 << 2 << 5 << 7
@@ -113,5 +122,23 @@ class TestRoaring < Minitest::Test
     assert_equal 2, bitmap.first
     assert_equal 9, bitmap.max
     assert_equal 9, bitmap.last
+  end
+
+  def test_memsize
+    require "objspace"
+
+    bitmap = Roaring::Bitmap.new
+    assert ObjectSpace.memsize_of(bitmap) > 80
+
+    0.upto(1_000_000) do |i|
+      bitmap.add(i)
+    end
+
+    assert ObjectSpace.memsize_of(bitmap) > 100_000
+    assert ObjectSpace.memsize_of(bitmap) < 1_000_000
+
+    bitmap.run_optimize
+
+    assert ObjectSpace.memsize_of(bitmap) < 1000
   end
 end
