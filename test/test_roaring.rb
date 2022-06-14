@@ -8,6 +8,10 @@ class TestRoaring < Minitest::Test
   end
 
   def test_it_does_something_useful
-    assert false
+    bitmap = Roaring::Bitmap.new
+    bitmap << 1 << 2
+    bitmap.add(5)
+    bitmap << 2
+    p bitmap.cardinality
   end
 end
