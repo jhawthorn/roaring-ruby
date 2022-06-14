@@ -200,6 +200,20 @@ class TestRoaring < Minitest::Test
     assert_equal original, bitmap
   end
 
+  def test_dup
+    r1 = Roaring::Bitmap.new
+    r1 << 1 << 2 << 3 << 4
+
+    assert_equal r1.dup, r1
+    assert_equal r1.clone, r1
+
+    r2 = r1.dup
+    r1 << 5
+
+    refute_equal r1, r2
+    assert_equal [5], (r1 - r2).to_a
+  end
+
   def test_memsize
     require "objspace"
 

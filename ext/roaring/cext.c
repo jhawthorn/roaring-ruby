@@ -33,6 +33,18 @@ static VALUE rb_roaring_alloc(VALUE self)
     return TypedData_Wrap_Struct(self, &roaring_type, data);
 }
 
+static VALUE rb_roaring_initialize_copy(VALUE self, VALUE other) {
+    roaring_bitmap_t *self_data;
+    TypedData_Get_Struct(self, roaring_bitmap_t, &roaring_type, self_data);
+
+    roaring_bitmap_t *other_data;
+    TypedData_Get_Struct(other, roaring_bitmap_t, &roaring_type, other_data);
+
+    roaring_bitmap_overwrite(self_data, other_data);
+
+    return self;
+}
+
 static VALUE rb_roaring_cardinality(VALUE self)
 {
 
@@ -222,6 +234,7 @@ Init_roaring(void)
 
   cRoaringBitmap = rb_define_class_under(rb_mRoaring, "Bitmap", rb_cObject);
   rb_define_alloc_func(cRoaringBitmap, rb_roaring_alloc);
+  rb_define_method(cRoaringBitmap, "initialize_copy", rb_roaring_initialize_copy, 1);
   rb_define_method(cRoaringBitmap, "empty?", rb_roaring_empty_p, 0);
   rb_define_method(cRoaringBitmap, "clear", rb_roaring_clear, 0);
   rb_define_method(cRoaringBitmap, "cardinality", rb_roaring_cardinality, 0);
