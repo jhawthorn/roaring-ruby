@@ -92,6 +92,22 @@ static VALUE rb_roaring_each(VALUE self)
     return self;
 }
 
+static VALUE rb_roaring_aref(VALUE self, VALUE rankv)
+{
+    roaring_bitmap_t *data;
+    TypedData_Get_Struct(self, roaring_bitmap_t, &roaring_type, data);
+
+    uint32_t rank = NUM2INT(rankv);
+    uint32_t val;
+
+    if (roaring_bitmap_select(data, rank, &val)) {
+        return INT2NUM(val);
+    } else {
+        return Qnil;
+    }
+    return self;
+}
+
 static VALUE rb_roaring_min(VALUE self)
 {
     roaring_bitmap_t *data;
@@ -165,6 +181,7 @@ Init_roaring(void)
   rb_define_method(cRoaringBitmap, "<<", rb_roaring_add, 1);
   rb_define_method(cRoaringBitmap, "include?", rb_roaring_include_p, 1);
   rb_define_method(cRoaringBitmap, "each", rb_roaring_each, 0);
+  rb_define_method(cRoaringBitmap, "[]", rb_roaring_aref, 1);
 
   rb_define_method(cRoaringBitmap, "&", rb_roaring_and, 1);
   rb_define_method(cRoaringBitmap, "|", rb_roaring_or, 1);

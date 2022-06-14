@@ -132,6 +132,17 @@ class TestRoaring < Minitest::Test
     assert_equal 9, bitmap.last
   end
 
+  def test_aref
+    bitmap = Roaring::Bitmap.new
+    bitmap << 1 << 2 << 3 << 4
+    assert_equal 1, bitmap[0]
+    assert_equal 2, bitmap[1]
+    assert_equal 3, bitmap[2]
+    assert_equal 4, bitmap[3]
+    assert_nil bitmap[4]
+    assert_nil bitmap[9999]
+  end
+
   def test_memsize
     require "objspace"
 
