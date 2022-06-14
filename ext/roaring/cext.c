@@ -83,6 +83,25 @@ static VALUE rb_roaring_each(VALUE self)
     return self;
 }
 
+static VALUE rb_roaring_min(VALUE self)
+{
+    roaring_bitmap_t *data;
+    TypedData_Get_Struct(self, roaring_bitmap_t, &roaring_type, data);
+
+    uint32_t val = roaring_bitmap_minimum(data);
+    return INT2NUM(val);
+}
+
+static VALUE rb_roaring_max(VALUE self)
+{
+    roaring_bitmap_t *data;
+    TypedData_Get_Struct(self, roaring_bitmap_t, &roaring_type, data);
+
+    uint32_t val = roaring_bitmap_maximum(data);
+    return INT2NUM(val);
+}
+
+
 typedef roaring_bitmap_t *binary_func(const roaring_bitmap_t *, const roaring_bitmap_t *);
 static VALUE rb_roaring_binary_op(VALUE self, VALUE other, binary_func func) {
     roaring_bitmap_t *self_data;
@@ -134,4 +153,7 @@ Init_roaring(void)
   rb_define_method(cRoaringBitmap, "|", rb_roaring_or, 1);
   rb_define_method(cRoaringBitmap, "^", rb_roaring_xor, 1);
   rb_define_method(cRoaringBitmap, "-", rb_roaring_andnot, 1);
+
+  rb_define_method(cRoaringBitmap, "min", rb_roaring_min, 0);
+  rb_define_method(cRoaringBitmap, "max", rb_roaring_max, 0);
 }

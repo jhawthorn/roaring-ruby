@@ -13,6 +13,11 @@ module Roaring
     alias length cardinality
     alias count  cardinality
 
+    alias + |
+
+    alias first min
+    alias last max
+
     def to_a
       map(&:itself)
     end

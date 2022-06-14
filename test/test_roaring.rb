@@ -105,4 +105,13 @@ class TestRoaring < Minitest::Test
     result = r1 - r2
     assert_equal [1, 2], result.to_a
   end
+
+  def test_min_and_max
+    bitmap = Roaring::Bitmap.new
+    bitmap << 5 << 2 << 9 << 7
+    assert_equal 2, bitmap.min
+    assert_equal 2, bitmap.first
+    assert_equal 9, bitmap.max
+    assert_equal 9, bitmap.last
+  end
 end
