@@ -87,6 +87,21 @@ class TestRoaring < Minitest::Test
     assert_equal [1, 2, 5, 7], result
   end
 
+  def test_eq
+    r1 = Roaring::Bitmap.new
+    r2 = Roaring::Bitmap.new
+    r3 = Roaring::Bitmap.new
+    r1 << 1 << 2 << 3 << 4
+    r2 << 1 << 2 << 3 << 4
+    r3 << 1 << 2 << 3
+
+    assert_equal r1, r1
+    assert_equal r1, r2
+    assert_equal r2, r1
+    refute_equal r1, r3
+    refute_equal r3, r1
+  end
+
   def test_and
     r1 = Roaring::Bitmap.new
     r2 = Roaring::Bitmap.new
