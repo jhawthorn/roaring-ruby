@@ -190,6 +190,16 @@ class TestRoaring < Minitest::Test
     assert_equal original, bitmap
   end
 
+  def test_marshal
+    original = Roaring::Bitmap.new
+    original << 1 << 2 << 3 << 4
+
+    dump = Marshal.dump(original)
+    bitmap = Marshal.load(dump)
+
+    assert_equal original, bitmap
+  end
+
   def test_memsize
     require "objspace"
 

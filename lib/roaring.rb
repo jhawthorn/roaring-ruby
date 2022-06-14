@@ -26,6 +26,14 @@ module Roaring
       other <= self
     end
 
+    def _dump level
+      serialize
+    end
+
+    def self._load args
+      deserialize(args)
+    end
+
     def to_a
       map(&:itself)
     end
