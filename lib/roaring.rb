@@ -5,5 +5,10 @@ require_relative "roaring/roaring"
 
 module Roaring
   class Error < StandardError; end
-  # Your code goes here...
+
+  class Bitmap
+    alias size   cardinality
+    alias length cardinality
+    alias count  cardinality
+  end
 end

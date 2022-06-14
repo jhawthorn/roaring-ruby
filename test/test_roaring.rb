@@ -14,6 +14,33 @@ class TestRoaring < Minitest::Test
     end
     bitmap << 155
     assert_equal 900, bitmap.cardinality
+    assert_equal 900, bitmap.size
+    assert_equal 900, bitmap.length
+    assert_equal 900, bitmap.count
+  end
+
+  def test_empty_p
+    bitmap = Roaring::Bitmap.new
+    assert bitmap.empty?
+
+    bitmap << 1
+    refute bitmap.empty?
+  end
+
+  def test_clear
+    bitmap = Roaring::Bitmap.new
+    assert bitmap.empty?
+    assert_equal 0, bitmap.cardinality
+
+    bitmap << 1
+
+    refute bitmap.empty?
+    assert_equal 1, bitmap.cardinality
+
+    bitmap.clear
+
+    assert bitmap.empty?
+    assert_equal 0, bitmap.cardinality
   end
 
   def test_it_raises_on_too_large_num
