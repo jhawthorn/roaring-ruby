@@ -96,6 +96,19 @@ static VALUE rb_roaring_and(VALUE self, VALUE other)
     return TypedData_Wrap_Struct(cRoaringBitmap, &roaring_type, result);
 }
 
+static VALUE rb_roaring_or(VALUE self, VALUE other)
+{
+    roaring_bitmap_t *self_data;
+    TypedData_Get_Struct(self, roaring_bitmap_t, &roaring_type, self_data);
+
+    roaring_bitmap_t *other_data;
+    TypedData_Get_Struct(other, roaring_bitmap_t, &roaring_type, other_data);
+
+    roaring_bitmap_t *result = roaring_bitmap_or(self_data, other_data);
+
+    return TypedData_Wrap_Struct(cRoaringBitmap, &roaring_type, result);
+}
+
 void
 Init_roaring(void)
 {
@@ -111,4 +124,5 @@ Init_roaring(void)
   rb_define_method(cRoaringBitmap, "each", rb_roaring_each, 0);
 
   rb_define_method(cRoaringBitmap, "&", rb_roaring_and, 1);
+  rb_define_method(cRoaringBitmap, "|", rb_roaring_or, 1);
 }
