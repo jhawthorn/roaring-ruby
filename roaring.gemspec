@@ -8,7 +8,7 @@ Gem::Specification.new do |spec|
   spec.authors = ["John Hawthorn"]
   spec.email = ["john@hawthorn.email"]
 
-  spec.summary = "placeholder"
+  spec.summary = "Roaring bitmaps for Ruby"
   spec.description = spec.summary
   spec.homepage = "https://github.com/jhawthorn/roaring-ruby"
   spec.license = "Apache-2.0"
