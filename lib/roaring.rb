@@ -31,8 +31,8 @@ module Roaring
 
     def self.[](*args)
       if args.size == 0
-        new(args)
-      elsif args.size == 1 && Integer === args[0]
+        new
+      elsif args.size == 1 && !(Integer === args[0])
         new(args[0])
       else
         new(args)

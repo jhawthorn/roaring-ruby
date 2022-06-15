@@ -19,6 +19,57 @@ class TestRoaring < Minitest::Test
     assert_equal 900, bitmap.count
   end
 
+  INTS_TO_TEST = [
+    -(2 ** 65),
+    -(2 ** 64),
+    -(2 ** 33),
+    -(2 ** 32),
+    -(2 ** 31),
+    -2,
+    -1,
+    0,
+    1,
+    2,
+    2 ** 31,
+    2 ** 32 - 1,
+    2 ** 32,
+    2 ** 32 + 1,
+    2 ** 33,
+    2 ** 64,
+    2 ** 65,
+  ]
+
+  INTS_TO_TEST.each do |i|
+    name = "test_#{"negative_" if i < 0}#{i.abs}"
+
+    if i < 0 || i >= 2**32
+      define_method("#{name}_is_rejected") do
+        bitmap = Roaring::Bitmap.new
+        assert_raises RangeError do
+          bitmap << i
+        end
+      end
+    else
+      define_method("#{name}_round_trips") do
+        bitmap = Roaring::Bitmap[i]
+        assert_equal i, bitmap.first
+      end
+    end
+  end
+
+  def test_type_error
+    bitmap = Roaring::Bitmap.new
+    assert_raises TypeError do
+      bitmap << "2"
+    end
+    assert_raises TypeError do
+      bitmap << 2.0
+    end
+    assert_raises TypeError do
+      bitmap << [2]
+    end
+  end
+
   def test_empty_p
     bitmap = Roaring::Bitmap.new
     assert bitmap.empty?

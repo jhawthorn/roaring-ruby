@@ -6,6 +6,17 @@
 static VALUE cRoaringBitmap;
 VALUE rb_mRoaring;
 
+static inline uint32_t
+NUM2UINT32(VALUE num) {
+    if (!FIXNUM_P(num) && !RB_TYPE_P(num, T_BIGNUM)) {
+        rb_raise(rb_eTypeError, "wrong argument type %s (expected Integer)", rb_obj_classname(num));
+    } else if ((SIGNED_VALUE)num < (SIGNED_VALUE)INT2FIX(0)) {
+        rb_raise(rb_eRangeError, "Integer %"PRIdVALUE " must be >= 0 to use with Roaring::Bitmap", num);
+    } else {
+        return FIX2UINT(num);
+    }
+}
+
 static void rb_roaring_free(void *data)
 {
     roaring_bitmap_free(data);
@@ -59,7 +70,7 @@ static VALUE rb_roaring_add(VALUE self, VALUE val)
     roaring_bitmap_t *data;
     TypedData_Get_Struct(self, roaring_bitmap_t, &roaring_type, data);
 
-    uint32_t num = NUM2UINT(val);
+    uint32_t num = NUM2UINT32(val);
     roaring_bitmap_add(data, num);
     return self;
 }
@@ -69,7 +80,7 @@ static VALUE rb_roaring_include_p(VALUE self, VALUE val)
     roaring_bitmap_t *data;
     TypedData_Get_Struct(self, roaring_bitmap_t, &roaring_type, data);
 
-    uint32_t num = NUM2UINT(val);
+    uint32_t num = NUM2UINT32(val);
     return roaring_bitmap_contains(data, num) ? Qtrue : Qfalse;
 }
 
@@ -109,7 +120,7 @@ static VALUE rb_roaring_aref(VALUE self, VALUE rankv)
     roaring_bitmap_t *data;
     TypedData_Get_Struct(self, roaring_bitmap_t, &roaring_type, data);
 
-    uint32_t rank = NUM2UINT(rankv);
+    uint32_t rank = NUM2UINT32(rankv);
     uint32_t val;
 
     if (roaring_bitmap_select(data, rank, &val)) {
