@@ -1,8 +1,9 @@
 # Roaring
 
-Welcome to your new gem! In this directory, you'll find the files you need to be able to package up your Ruby library into a gem. Put your Ruby code in the file `lib/roaring`. To experiment with that code, run `bin/console` for an interactive prompt.
+A Ruby wrapper for CRoaring (a C/C++ implementation at https://github.com/RoaringBitmap/CRoaring)
 
-TODO: Delete this and the text above, and describe your gem
+Roaring Bitmaps are a compressed bitmap/bitset format/library.
+More information and papers can be found at https://roaringbitmap.org/
 
 ## Installation
 
@@ -10,13 +11,39 @@ Install the gem and add to the application's Gemfile by executing:
 
     $ bundle add roaring
 
-If bundler is not being used to manage dependencies, install the gem by executing:
-
-    $ gem install roaring
-
 ## Usage
 
-TODO: Write usage instructions here
+``` ruby
+require "roaring"
+
+# Bitmaps can efficiently store a large range of 32-bit integers
+bitmap = Roaring::Bitmap[1, 2, 3, 999]
+bitmap << (2**32 - 1)
+
+# Element access
+bitmap.each { }
+bitmap.first # => 1
+bitmap.min   # => 1
+bitmap.max   # => 4294967295
+bitmap.last  # => 4294967295
+bitmap[3]    # => 999
+
+b1 = Roaring::Bitmap.new(200...500)
+b2 = Roaring::Bitmap.new(100...1000)
+
+# Support common set operations
+(b1 & b2).size # => 300
+(b1 ^ b2).size # => 600
+(b2 - b1).size # => 600
+(b1 - b2).empty? # => true
+b1 < b2 # => true
+(b2 - b1) == (b1 ^ b2) # => true
+
+# (De)Serialization (also available via Marshal#{dump,load})
+dump = bitmap.serialize
+loaded = Roaring::Bitmap.deserialize(dump)
+loaded == bitmap # => true
+```
 
 ## Development
 
@@ -30,7 +57,7 @@ Bug reports and pull requests are welcome on GitHub at https://github.com/jhawth
 
 ## License
 
-The gem is available as open source under the terms of the [MIT License](https://opensource.org/licenses/MIT).
+The gem is available as open source under the terms of the [Apache License, Version 2.0](https://opensource.org/licenses/Apache-2.0).
 
 ## Code of Conduct
 
