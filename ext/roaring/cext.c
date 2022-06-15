@@ -109,11 +109,11 @@ static VALUE rb_roaring_aref(VALUE self, VALUE rankv)
     roaring_bitmap_t *data;
     TypedData_Get_Struct(self, roaring_bitmap_t, &roaring_type, data);
 
-    uint32_t rank = NUM2INT(rankv);
+    uint32_t rank = NUM2UINT(rankv);
     uint32_t val;
 
     if (roaring_bitmap_select(data, rank, &val)) {
-        return INT2NUM(val);
+        return UINT2NUM(val);
     } else {
         return Qnil;
     }
@@ -126,7 +126,7 @@ static VALUE rb_roaring_min(VALUE self)
     TypedData_Get_Struct(self, roaring_bitmap_t, &roaring_type, data);
 
     uint32_t val = roaring_bitmap_minimum(data);
-    return INT2NUM(val);
+    return UINT2NUM(val);
 }
 
 static VALUE rb_roaring_max(VALUE self)
@@ -135,7 +135,7 @@ static VALUE rb_roaring_max(VALUE self)
     TypedData_Get_Struct(self, roaring_bitmap_t, &roaring_type, data);
 
     uint32_t val = roaring_bitmap_maximum(data);
-    return INT2NUM(val);
+    return UINT2NUM(val);
 }
 
 static VALUE rb_roaring_run_optimize(VALUE self)
