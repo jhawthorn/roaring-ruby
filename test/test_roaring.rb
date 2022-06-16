@@ -70,6 +70,23 @@ class TestRoaring < Minitest::Test
     end
   end
 
+  def test_add
+    bitmap = Roaring::Bitmap[1, 2]
+    bitmap.add(3)
+    assert_equal [1, 2, 3], bitmap.to_a
+    bitmap.add(2)
+    assert_equal [1, 2, 3], bitmap.to_a
+  end
+
+  def test_remove
+    bitmap = Roaring::Bitmap[1, 2, 3, 4]
+    assert_equal [1, 2, 3, 4], bitmap.to_a
+    bitmap.remove(3)
+    assert_equal [1, 2, 4], bitmap.to_a
+    bitmap.remove(10)
+    assert_equal [1, 2, 4], bitmap.to_a
+  end
+
   def test_empty_p
     bitmap = Roaring::Bitmap.new
     assert bitmap.empty?
