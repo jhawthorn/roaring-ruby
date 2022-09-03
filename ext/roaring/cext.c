@@ -44,12 +44,15 @@ static VALUE rb_roaring_alloc(VALUE self)
     return TypedData_Wrap_Struct(self, &roaring_type, data);
 }
 
-static VALUE rb_roaring_initialize_copy(VALUE self, VALUE other) {
-    roaring_bitmap_t *self_data;
-    TypedData_Get_Struct(self, roaring_bitmap_t, &roaring_type, self_data);
+static roaring_bitmap_t *get_bitmap(VALUE obj) {
+    roaring_bitmap_t *bitmap;
+    TypedData_Get_Struct(obj, roaring_bitmap_t, &roaring_type, bitmap);
+    return bitmap;
+}
 
-    roaring_bitmap_t *other_data;
-    TypedData_Get_Struct(other, roaring_bitmap_t, &roaring_type, other_data);
+static VALUE rb_roaring_initialize_copy(VALUE self, VALUE other) {
+    roaring_bitmap_t *self_data = get_bitmap(self);
+    roaring_bitmap_t *other_data = get_bitmap(other);
 
     roaring_bitmap_overwrite(self_data, other_data);
 
@@ -58,17 +61,14 @@ static VALUE rb_roaring_initialize_copy(VALUE self, VALUE other) {
 
 static VALUE rb_roaring_cardinality(VALUE self)
 {
-
-    roaring_bitmap_t *data;
-    TypedData_Get_Struct(self, roaring_bitmap_t, &roaring_type, data);
+    roaring_bitmap_t *data = get_bitmap(self);
     uint64_t cardinality = roaring_bitmap_get_cardinality(data);
     return ULONG2NUM(cardinality);
 }
 
 static VALUE rb_roaring_add(VALUE self, VALUE val)
 {
-    roaring_bitmap_t *data;
-    TypedData_Get_Struct(self, roaring_bitmap_t, &roaring_type, data);
+    roaring_bitmap_t *data = get_bitmap(self);
 
     uint32_t num = NUM2UINT32(val);
     roaring_bitmap_add(data, num);
@@ -77,8 +77,7 @@ static VALUE rb_roaring_add(VALUE self, VALUE val)
 
 static VALUE rb_roaring_remove(VALUE self, VALUE val)
 {
-    roaring_bitmap_t *data;
-    TypedData_Get_Struct(self, roaring_bitmap_t, &roaring_type, data);
+    roaring_bitmap_t *data = get_bitmap(self);
 
     uint32_t num = NUM2UINT32(val);
     roaring_bitmap_remove(data, num);
@@ -87,8 +86,7 @@ static VALUE rb_roaring_remove(VALUE self, VALUE val)
 
 static VALUE rb_roaring_include_p(VALUE self, VALUE val)
 {
-    roaring_bitmap_t *data;
-    TypedData_Get_Struct(self, roaring_bitmap_t, &roaring_type, data);
+    roaring_bitmap_t *data = get_bitmap(self);
 
     uint32_t num = NUM2UINT32(val);
     return roaring_bitmap_contains(data, num) ? Qtrue : Qfalse;
@@ -96,17 +94,13 @@ static VALUE rb_roaring_include_p(VALUE self, VALUE val)
 
 static VALUE rb_roaring_empty_p(VALUE self)
 {
-    roaring_bitmap_t *data;
-    TypedData_Get_Struct(self, roaring_bitmap_t, &roaring_type, data);
-
+    roaring_bitmap_t *data = get_bitmap(self);
     return roaring_bitmap_is_empty(data) ? Qtrue : Qfalse;
 }
 
 static VALUE rb_roaring_clear(VALUE self)
 {
-    roaring_bitmap_t *data;
-    TypedData_Get_Struct(self, roaring_bitmap_t, &roaring_type, data);
-
+    roaring_bitmap_t *data = get_bitmap(self);
     roaring_bitmap_clear(data);
     return self;
 }
@@ -118,17 +112,14 @@ bool rb_roaring_each_i(uint32_t value, void *param) {
 
 static VALUE rb_roaring_each(VALUE self)
 {
-    roaring_bitmap_t *data;
-    TypedData_Get_Struct(self, roaring_bitmap_t, &roaring_type, data);
-
+    roaring_bitmap_t *data = get_bitmap(self);
     roaring_iterate(data, rb_roaring_each_i, NULL);
     return self;
 }
 
 static VALUE rb_roaring_aref(VALUE self, VALUE rankv)
 {
-    roaring_bitmap_t *data;
-    TypedData_Get_Struct(self, roaring_bitmap_t, &roaring_type, data);
+    roaring_bitmap_t *data = get_bitmap(self);
 
     uint32_t rank = NUM2UINT32(rankv);
     uint32_t val;
@@ -143,34 +134,27 @@ static VALUE rb_roaring_aref(VALUE self, VALUE rankv)
 
 static VALUE rb_roaring_min(VALUE self)
 {
-    roaring_bitmap_t *data;
-    TypedData_Get_Struct(self, roaring_bitmap_t, &roaring_type, data);
-
+    roaring_bitmap_t *data = get_bitmap(self);
     uint32_t val = roaring_bitmap_minimum(data);
     return UINT2NUM(val);
 }
 
 static VALUE rb_roaring_max(VALUE self)
 {
-    roaring_bitmap_t *data;
-    TypedData_Get_Struct(self, roaring_bitmap_t, &roaring_type, data);
-
+    roaring_bitmap_t *data = get_bitmap(self);
     uint32_t val = roaring_bitmap_maximum(data);
     return UINT2NUM(val);
 }
 
 static VALUE rb_roaring_run_optimize(VALUE self)
 {
-    roaring_bitmap_t *data;
-    TypedData_Get_Struct(self, roaring_bitmap_t, &roaring_type, data);
-
+    roaring_bitmap_t *data = get_bitmap(self);
     return roaring_bitmap_run_optimize(data) ? Qtrue : Qfalse;
 }
 
 static VALUE rb_roaring_serialize(VALUE self)
 {
-    roaring_bitmap_t *data;
-    TypedData_Get_Struct(self, roaring_bitmap_t, &roaring_type, data);
+    roaring_bitmap_t *data = get_bitmap(self);
 
     size_t size = roaring_bitmap_portable_size_in_bytes(data);
     VALUE str = rb_str_buf_new(size);
@@ -190,11 +174,8 @@ static VALUE rb_roaring_deserialize(VALUE self, VALUE str)
 
 typedef roaring_bitmap_t *binary_func(const roaring_bitmap_t *, const roaring_bitmap_t *);
 static VALUE rb_roaring_binary_op(VALUE self, VALUE other, binary_func func) {
-    roaring_bitmap_t *self_data;
-    TypedData_Get_Struct(self, roaring_bitmap_t, &roaring_type, self_data);
-
-    roaring_bitmap_t *other_data;
-    TypedData_Get_Struct(other, roaring_bitmap_t, &roaring_type, other_data);
+    roaring_bitmap_t *self_data = get_bitmap(self);
+    roaring_bitmap_t *other_data = get_bitmap(other);
 
     roaring_bitmap_t *result = func(self_data, other_data);
 
@@ -203,11 +184,8 @@ static VALUE rb_roaring_binary_op(VALUE self, VALUE other, binary_func func) {
 
 typedef bool binary_func_bool(const roaring_bitmap_t *, const roaring_bitmap_t *);
 static VALUE rb_roaring_binary_op_bool(VALUE self, VALUE other, binary_func_bool func) {
-    roaring_bitmap_t *self_data;
-    TypedData_Get_Struct(self, roaring_bitmap_t, &roaring_type, self_data);
-
-    roaring_bitmap_t *other_data;
-    TypedData_Get_Struct(other, roaring_bitmap_t, &roaring_type, other_data);
+    roaring_bitmap_t *self_data = get_bitmap(self);
+    roaring_bitmap_t *other_data = get_bitmap(other);
 
     bool result = func(self_data, other_data);
     return result ? Qtrue : Qfalse;
