@@ -16,11 +16,14 @@ module Roaring
 
     alias + |
     alias union |
+    alias intersection &
 
     alias delete remove
 
     alias first min
     alias last max
+
+    alias === include?
 
     def initialize(enum = nil)
       return unless enum
@@ -30,6 +33,25 @@ module Roaring
       else
         enum.each { |x| self << x }
       end
+    end
+
+    def hash
+      to_a.hash
+    end
+
+    alias eql? ==
+
+    def replace(other)
+      # FIXME: this should probably be initialize_copy and replace should be in C
+      initialize_copy(other)
+    end
+
+    def add?(v)
+      add(v) unless include?(v)
+    end
+
+    def delete?(v)
+      delete(v) if include?(v)
     end
 
     def self.[](*args)
@@ -54,6 +76,18 @@ module Roaring
     alias proper_subset? <
     alias superset? >=
     alias proper_superset? >
+
+    def <=>(other)
+      if self == other
+        0
+      elsif subset?(other)
+        -1
+      elsif superset?(other)
+        1
+      else
+        nil
+      end
+    end
 
     def disjoint?(other)
       !intersect?(other)
