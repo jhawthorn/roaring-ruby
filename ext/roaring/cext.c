@@ -226,6 +226,12 @@ static VALUE rb_roaring_lte(VALUE self, VALUE other)
 {
     return rb_roaring_binary_op_bool(self, other, roaring_bitmap_is_subset);
 }
+
+static VALUE rb_roaring_intersect_p(VALUE self, VALUE other)
+{
+    return rb_roaring_binary_op_bool(self, other, roaring_bitmap_intersect);
+}
+
 void
 Init_roaring(void)
 {
@@ -252,6 +258,7 @@ Init_roaring(void)
   rb_define_method(cRoaringBitmap, "==", rb_roaring_eq, 1);
   rb_define_method(cRoaringBitmap, "<", rb_roaring_lt, 1);
   rb_define_method(cRoaringBitmap, "<=", rb_roaring_lte, 1);
+  rb_define_method(cRoaringBitmap, "intersect?", rb_roaring_intersect_p, 1);
 
   rb_define_method(cRoaringBitmap, "min", rb_roaring_min, 0);
   rb_define_method(cRoaringBitmap, "max", rb_roaring_max, 0);

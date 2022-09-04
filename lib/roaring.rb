@@ -55,6 +55,10 @@ module Roaring
     alias superset? >=
     alias proper_superset? >
 
+    def disjoint?(other)
+      !intersect?(other)
+    end
+
     def _dump level
       serialize
     end

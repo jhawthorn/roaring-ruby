@@ -183,6 +183,27 @@ class TestRoaring < Minitest::Test
     assert r1 >= r2
   end
 
+  def test_intersect
+    r1 = Roaring::Bitmap[1, 2]
+    r2 = Roaring::Bitmap[2, 3]
+    r3 = Roaring::Bitmap[3, 4]
+
+    assert r1.intersect?(r2)
+    assert r2.intersect?(r1)
+    refute r1.disjoint?(r2)
+    refute r2.disjoint?(r1)
+
+    assert r2.intersect?(r3)
+    assert r3.intersect?(r2)
+    refute r2.disjoint?(r3)
+    refute r3.disjoint?(r2)
+
+    refute r1.intersect?(r3)
+    refute r3.intersect?(r1)
+    assert r1.disjoint?(r3)
+    assert r3.disjoint?(r1)
+  end
+
   def test_and
     r1 = Roaring::Bitmap[1, 2, 3, 4]
     r2 = Roaring::Bitmap[3, 4, 5, 6]
