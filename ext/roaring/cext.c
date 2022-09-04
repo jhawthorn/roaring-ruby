@@ -6,6 +6,10 @@
 static VALUE cRoaringBitmap;
 VALUE rb_mRoaring;
 
+#ifndef RBOOL
+#define RBOOL(x) ((x) ? Qtrue : Qfalse)
+#endif
+
 static inline uint32_t
 NUM2UINT32(VALUE num) {
     if (!FIXNUM_P(num) && !RB_TYPE_P(num, T_BIGNUM)) {
@@ -89,13 +93,13 @@ static VALUE rb_roaring_include_p(VALUE self, VALUE val)
     roaring_bitmap_t *data = get_bitmap(self);
 
     uint32_t num = NUM2UINT32(val);
-    return roaring_bitmap_contains(data, num) ? Qtrue : Qfalse;
+    return RBOOL(roaring_bitmap_contains(data, num));
 }
 
 static VALUE rb_roaring_empty_p(VALUE self)
 {
     roaring_bitmap_t *data = get_bitmap(self);
-    return roaring_bitmap_is_empty(data) ? Qtrue : Qfalse;
+    return RBOOL(roaring_bitmap_is_empty(data));
 }
 
 static VALUE rb_roaring_clear(VALUE self)
@@ -159,7 +163,7 @@ static VALUE rb_roaring_max(VALUE self)
 static VALUE rb_roaring_run_optimize(VALUE self)
 {
     roaring_bitmap_t *data = get_bitmap(self);
-    return roaring_bitmap_run_optimize(data) ? Qtrue : Qfalse;
+    return RBOOL(roaring_bitmap_run_optimize(data));
 }
 
 static VALUE rb_roaring_serialize(VALUE self)
@@ -198,7 +202,7 @@ static VALUE rb_roaring_binary_op_bool(VALUE self, VALUE other, binary_func_bool
     roaring_bitmap_t *other_data = get_bitmap(other);
 
     bool result = func(self_data, other_data);
-    return result ? Qtrue : Qfalse;
+    return RBOOL(result);
 }
 
 
