@@ -20,6 +20,7 @@ module Roaring
     alias difference -
 
     alias delete remove
+    alias delete? remove?
 
     alias first min
     alias last max
@@ -45,14 +46,6 @@ module Roaring
     def replace(other)
       # FIXME: this should probably be initialize_copy and replace should be in C
       initialize_copy(other)
-    end
-
-    def add?(v)
-      add(v) unless include?(v)
-    end
-
-    def delete?(v)
-      delete(v) if include?(v)
     end
 
     def self.[](*args)

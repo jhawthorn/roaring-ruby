@@ -79,6 +79,14 @@ static VALUE rb_roaring_add(VALUE self, VALUE val)
     return self;
 }
 
+static VALUE rb_roaring_add_p(VALUE self, VALUE val)
+{
+    roaring_bitmap_t *data = get_bitmap(self);
+
+    uint32_t num = NUM2UINT32(val);
+    return roaring_bitmap_add_checked(data, num) ? self : Qnil;
+}
+
 static VALUE rb_roaring_remove(VALUE self, VALUE val)
 {
     roaring_bitmap_t *data = get_bitmap(self);
@@ -86,6 +94,14 @@ static VALUE rb_roaring_remove(VALUE self, VALUE val)
     uint32_t num = NUM2UINT32(val);
     roaring_bitmap_remove(data, num);
     return self;
+}
+
+static VALUE rb_roaring_remove_p(VALUE self, VALUE val)
+{
+    roaring_bitmap_t *data = get_bitmap(self);
+
+    uint32_t num = NUM2UINT32(val);
+    return roaring_bitmap_remove_checked(data, num) ? self : Qnil;
 }
 
 static VALUE rb_roaring_include_p(VALUE self, VALUE val)
@@ -258,8 +274,10 @@ Init_roaring(void)
   rb_define_method(cRoaringBitmap, "clear", rb_roaring_clear, 0);
   rb_define_method(cRoaringBitmap, "cardinality", rb_roaring_cardinality, 0);
   rb_define_method(cRoaringBitmap, "add", rb_roaring_add, 1);
+  rb_define_method(cRoaringBitmap, "add?", rb_roaring_add_p, 1);
   rb_define_method(cRoaringBitmap, "<<", rb_roaring_add, 1);
   rb_define_method(cRoaringBitmap, "remove", rb_roaring_remove, 1);
+  rb_define_method(cRoaringBitmap, "remove?", rb_roaring_remove_p, 1);
   rb_define_method(cRoaringBitmap, "include?", rb_roaring_include_p, 1);
   rb_define_method(cRoaringBitmap, "each", rb_roaring_each, 0);
   rb_define_method(cRoaringBitmap, "[]", rb_roaring_aref, 1);
