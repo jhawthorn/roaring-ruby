@@ -15,6 +15,9 @@ module Roaring
     alias count  cardinality
 
     alias + |
+    alias union |
+
+    alias delete remove
 
     alias first min
     alias last max
@@ -46,6 +49,11 @@ module Roaring
     def >=(other)
       other <= self
     end
+
+    alias subset? <=
+    alias proper_subset? <
+    alias superset? >=
+    alias proper_superset? >
 
     def _dump level
       serialize
