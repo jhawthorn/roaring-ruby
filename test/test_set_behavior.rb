@@ -18,7 +18,7 @@ class TestSetBehavior < Minitest::Test
     subset? proper_subset? superset? proper_superset?
     disjoint? intersect?
     + - & | ^
-    union intersection
+    union intersection difference
 
     replace
   ]

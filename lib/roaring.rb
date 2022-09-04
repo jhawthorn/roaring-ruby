@@ -17,6 +17,7 @@ module Roaring
     alias + |
     alias union |
     alias intersection &
+    alias difference -
 
     alias delete remove
 
