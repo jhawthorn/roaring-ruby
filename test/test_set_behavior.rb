@@ -27,6 +27,7 @@ class TestSetBehavior < Minitest::Test
     empty? length size
     clear
     to_a
+    min max
   ]
 
   arg_methods = %i[

@@ -135,15 +135,25 @@ static VALUE rb_roaring_aref(VALUE self, VALUE rankv)
 static VALUE rb_roaring_min(VALUE self)
 {
     roaring_bitmap_t *data = get_bitmap(self);
-    uint32_t val = roaring_bitmap_minimum(data);
-    return UINT2NUM(val);
+
+    if (roaring_bitmap_is_empty(data)) {
+        return Qnil;
+    } else {
+        uint32_t val = roaring_bitmap_minimum(data);
+        return UINT2NUM(val);
+    }
 }
 
 static VALUE rb_roaring_max(VALUE self)
 {
     roaring_bitmap_t *data = get_bitmap(self);
-    uint32_t val = roaring_bitmap_maximum(data);
-    return UINT2NUM(val);
+
+    if (roaring_bitmap_is_empty(data)) {
+        return Qnil;
+    } else {
+        uint32_t val = roaring_bitmap_maximum(data);
+        return UINT2NUM(val);
+    }
 }
 
 static VALUE rb_roaring_run_optimize(VALUE self)

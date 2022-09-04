@@ -3,6 +3,8 @@
 require "test_helper"
 
 class TestRoaring < Minitest::Test
+  include Roaring
+
   def test_that_it_has_a_version_number
     refute_nil ::Roaring::VERSION
   end
@@ -239,6 +241,9 @@ class TestRoaring < Minitest::Test
     assert_equal 2, bitmap.first
     assert_equal 9, bitmap.max
     assert_equal 9, bitmap.last
+
+    assert_nil Bitmap[].min
+    assert_nil Bitmap[].max
   end
 
   def test_aref
