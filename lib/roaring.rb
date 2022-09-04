@@ -64,7 +64,12 @@ module Roaring
     end
 
     def inspect
-      "#<#{self.class} cardinality=#{cardinality}>"
+      cardinality = self.cardinality
+      if cardinality < 64
+        "#<#{self.class} {#{to_a.join(", ")}}>"
+      else
+        "#<#{self.class} (#{cardinality} values)>"
+      end
     end
   end
 end

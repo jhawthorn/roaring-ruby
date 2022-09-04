@@ -277,4 +277,15 @@ class TestRoaring < Minitest::Test
 
     assert ObjectSpace.memsize_of(bitmap) < 1000
   end
+
+  def test_inspect
+    bitmap = Roaring::Bitmap[]
+    assert_equal "#<Roaring::Bitmap {}>", bitmap.inspect
+
+    bitmap = Roaring::Bitmap[1, 2, 3, 4]
+    assert_equal "#<Roaring::Bitmap {1, 2, 3, 4}>", bitmap.inspect
+
+    bitmap = Roaring::Bitmap[0...1000]
+    assert_equal "#<Roaring::Bitmap (1000 values)>", bitmap.inspect
+  end
 end
