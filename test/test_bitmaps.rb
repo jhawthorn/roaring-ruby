@@ -46,13 +46,16 @@ module BitmapTests
 
     define_method("#{name}_is_handled_correctly") do
       if bitmap_class::RANGE.cover?(i)
+        bitmap = bitmap_class[i]
+        assert_equal i, bitmap.first
+        assert_equal i, bitmap.min
+        assert_equal i, bitmap.max
+        assert_equal i, bitmap[0]
+      else
         bitmap = bitmap_class.new
         assert_raises RangeError do
           bitmap << i
         end
-      else
-        bitmap = bitmap_class[i]
-        assert_equal i, bitmap.first
       end
     end
   end
@@ -130,11 +133,12 @@ module BitmapTests
 
   def test_it_raises_on_too_large_num
     bitmap = bitmap_class.new
+    bitmap << bitmap_class::MAX
     assert_raises RangeError do
-      bitmap << 2**65
+      bitmap << (bitmap_class::MAX + 1)
     end
     assert_raises RangeError do
-      bitmap << 2**33
+      bitmap << (bitmap_class::MAX * 2)
     end
   end
 
@@ -301,6 +305,21 @@ module BitmapTests
     assert_equal [5], (r1 - r2).to_a
   end
 
+  def test_inspect
+    bitmap = bitmap_class[]
+    assert_equal "#<#{bitmap_class} {}>", bitmap.inspect
+
+    bitmap = bitmap_class[1, 2, 3, 4]
+    assert_equal "#<#{bitmap_class} {1, 2, 3, 4}>", bitmap.inspect
+
+    bitmap = bitmap_class[0...1000]
+    assert_equal "#<#{bitmap_class} (1000 values)>", bitmap.inspect
+  end
+end
+
+class Bitmap32Test < Minitest::Test
+  include BitmapTests
+
   def test_memsize
     require "objspace"
 
@@ -319,27 +338,12 @@ module BitmapTests
     assert ObjectSpace.memsize_of(bitmap) < 1000
   end
 
-  def test_inspect
-    bitmap = bitmap_class[]
-    assert_equal "#<#{bitmap_class} {}>", bitmap.inspect
-
-    bitmap = bitmap_class[1, 2, 3, 4]
-    assert_equal "#<#{bitmap_class} {1, 2, 3, 4}>", bitmap.inspect
-
-    bitmap = bitmap_class[0...1000]
-    assert_equal "#<#{bitmap_class} (1000 values)>", bitmap.inspect
-  end
-end
-
-class Bitmap32Test < Minitest::Test
-  include BitmapTests
-
   def bitmap_class
     Roaring::Bitmap32
   end
 end
 
-class Bitmap32Test < Minitest::Test
+class Bitmap64Test < Minitest::Test
   include BitmapTests
 
   def bitmap_class
