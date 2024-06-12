@@ -7,31 +7,60 @@ require "set"
 module Roaring
   class Error < StandardError; end
 
-  class Bitmap32
+  module BitmapCommon
+    def self.included(base)
+      super
+
+      base.extend ClassMethods
+
+      base.alias_method :size, :cardinality
+      base.alias_method :length, :cardinality
+      base.alias_method :count, :cardinality
+
+      base.alias_method :+, :|
+      base.alias_method :union, :|
+      base.alias_method :intersection, :&
+      base.alias_method :difference, :-
+
+      base.alias_method :delete, :remove
+      base.alias_method :delete?, :remove?
+
+      base.alias_method :first, :min
+      base.alias_method :last, :max
+
+      base.alias_method :eql?, :==
+
+      base.alias_method :===, :include?
+
+      base.alias_method :subset?, :<=
+      base.alias_method :proper_subset?, :<
+      base.alias_method :superset?, :>=
+      base.alias_method :proper_superset?, :>
+    end
+
+    module ClassMethods
+      def [](*args)
+        if args.size == 0
+          new
+        elsif args.size == 1 && !(Integer === args[0])
+          new(args[0])
+        else
+          new(args)
+        end
+      end
+
+      def _load args
+        deserialize(args)
+      end
+    end
+
     include Enumerable
-
-    alias size   cardinality
-    alias length cardinality
-    alias count  cardinality
-
-    alias + |
-    alias union |
-    alias intersection &
-    alias difference -
-
-    alias delete remove
-    alias delete? remove?
-
-    alias first min
-    alias last max
-
-    alias === include?
 
     def initialize(enum = nil)
       return unless enum
 
-      if enum.instance_of?(Roaring::Bitmap32)
-        initialize_copy(enum)
+      if enum.instance_of?(self.class)
+        replace(enum)
       else
         enum.each { |x| self << x }
       end
@@ -41,20 +70,8 @@ module Roaring
       to_a.hash
     end
 
-    alias eql? ==
-
     def initialize_copy(other)
       replace(other)
-    end
-
-    def self.[](*args)
-      if args.size == 0
-        new
-      elsif args.size == 1 && !(Integer === args[0])
-        new(args[0])
-      else
-        new(args)
-      end
     end
 
     def >(other)
@@ -64,11 +81,6 @@ module Roaring
     def >=(other)
       other <= self
     end
-
-    alias subset? <=
-    alias proper_subset? <
-    alias superset? >=
-    alias proper_superset? >
 
     def <=>(other)
       if self == other
@@ -90,10 +102,6 @@ module Roaring
       serialize
     end
 
-    def self._load args
-      deserialize(args)
-    end
-
     def to_a
       map(&:itself)
     end
@@ -110,5 +118,9 @@ module Roaring
         "#<#{self.class} (#{cardinality} values)>"
       end
     end
+  end
+
+  class Bitmap32
+    include BitmapCommon
   end
 end
