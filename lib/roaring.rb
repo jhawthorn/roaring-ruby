@@ -122,9 +122,17 @@ module Roaring
 
   class Bitmap32
     include BitmapCommon
+
+    MIN = 0
+    MAX = (2**32) - 1
+    RANGE = MIN..MAX
   end
 
   class Bitmap64
     include BitmapCommon
+
+    MIN = 0
+    MAX = (2**64) - 1
+    RANGE = MIN..MAX
   end
 end

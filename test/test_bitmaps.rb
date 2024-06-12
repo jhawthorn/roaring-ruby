@@ -18,6 +18,7 @@ module BitmapTests
   end
 
   INTS_TO_TEST = [
+    -(2 ** 128),
     -(2 ** 65),
     -(2 ** 64),
     -(2 ** 33),
@@ -33,22 +34,23 @@ module BitmapTests
     2 ** 32,
     2 ** 32 + 1,
     2 ** 33,
+    2 ** 64 - 1,
     2 ** 64,
+    2 ** 64 + 1,
     2 ** 65,
+    2 ** 128,
   ]
 
   INTS_TO_TEST.each do |i|
     name = "test_#{"negative_" if i < 0}#{i.abs}"
 
-    if i < 0 || i >= 2**32
-      define_method("#{name}_is_rejected") do
+    define_method("#{name}_is_handled_correctly") do
+      if bitmap_class::RANGE.cover?(i)
         bitmap = bitmap_class.new
         assert_raises RangeError do
           bitmap << i
         end
-      end
-    else
-      define_method("#{name}_round_trips") do
+      else
         bitmap = bitmap_class[i]
         assert_equal i, bitmap.first
       end
