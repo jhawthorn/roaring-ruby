@@ -2,7 +2,7 @@
 
 VALUE rb_mRoaring;
 
-void
+RUBY_FUNC_EXPORTED void
 Init_roaring(void)
 {
   rb_mRoaring = rb_define_module("Roaring");
