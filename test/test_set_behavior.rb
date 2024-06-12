@@ -84,30 +84,38 @@ class TestSetBehavior < Minitest::Test
 
   def with_both(*args)
     sets = args.map { |a| Set.new(a) }
-    bitmaps = args.map { |a| Roaring::Bitmap32.new(a) }
+    bitmap32 = args.map { |a| Roaring::Bitmap32.new(a) }
+    bitmap64 = args.map { |a| Roaring::Bitmap64.new(a) }
 
     set_result = yield(*sets)
-    bitmap_result = yield(*bitmaps)
+    bitmap32_result = yield(*bitmap32)
+    bitmap64_result = yield(*bitmap64)
 
     # Check that they are equal in case of mutation
-    sets.zip(bitmaps) do |set, bitmap|
+    sets.zip(bitmap32) do |set, bitmap|
+      assert_equivalent set, bitmap
+    end
+    sets.zip(bitmap64) do |set, bitmap|
       assert_equivalent set, bitmap
     end
 
     # Check return value
     case set_result
     when Set
-      assert_equivalent set_result, bitmap_result
+      assert_equivalent set_result, bitmap32_result
+      assert_equivalent set_result, bitmap64_result
     when nil
-      assert_nil bitmap_result
+      assert_nil bitmap32_result
+      assert_nil bitmap64_result
     else
-      assert_equal set_result, bitmap_result
+      assert_equal set_result, bitmap32_result
+      assert_equal set_result, bitmap64_result
     end
   end
 
   def assert_equivalent(set, bitmap)
     assert_kind_of Set, set
-    assert_kind_of Roaring::Bitmap32, bitmap
+    assert_kind_of Roaring::BitmapCommon, bitmap
 
     assert_equal set.to_a.sort, bitmap.to_a
   end
