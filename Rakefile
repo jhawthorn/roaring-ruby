@@ -27,4 +27,4 @@ task :update_roaring do
   end
 end
 
-task default: %i[clobber compile test]
+task default: %i[compile test]
