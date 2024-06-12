@@ -16,9 +16,14 @@ Install the gem and add to the application's Gemfile by executing:
 ``` ruby
 require "roaring"
 
-# Bitmaps can efficiently store a large range of 32-bit integers
-bitmap = Roaring::Bitmap[1, 2, 3, 999]
+# Bitmap32 can efficiently store a large range of 32-bit integers
+bitmap = Roaring::Bitmap32[1, 2, 3, 999]
 bitmap << (2**32 - 1)
+
+# Bitmap64 can efficiently store a large range of 64-bit integers
+bitmap = Roaring::Bitmap64[1, 2, 3, 999]
+bitmap << (2**32 + 1)
+bitmap << (2**64 - 1)
 
 # Element access
 bitmap.each { }
@@ -28,8 +33,8 @@ bitmap.max   # => 4294967295
 bitmap.last  # => 4294967295
 bitmap[3]    # => 999
 
-b1 = Roaring::Bitmap.new(200...500)
-b2 = Roaring::Bitmap.new(100...1000)
+b1 = Roaring::Bitmap64.new(200...500)
+b2 = Roaring::Bitmap64.new(100...1000)
 
 # Support common set operations
 (b1 & b2).size # => 300
@@ -41,7 +46,7 @@ b1 < b2 # => true
 
 # (De)Serialization (also available via Marshal#{dump,load})
 dump = bitmap.serialize
-loaded = Roaring::Bitmap.deserialize(dump)
+loaded = Roaring::Bitmap64.deserialize(dump)
 loaded == bitmap # => true
 ```
 
