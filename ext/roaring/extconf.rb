@@ -2,9 +2,9 @@
 
 require "mkmf"
 
-submodule = "#{__dir__}/roaring/"
+#submodule = "#{__dir__}/roaring/"
 
-$objs = ["cext.o", "#{submodule}/roaring.o"]
-$CPPFLAGS += " -I#{submodule} "
+$objs = ["cext.o", "roaring.o"]
+#$CPPFLAGS += " -I#{submodule} "
 
 create_makefile("roaring/roaring")
