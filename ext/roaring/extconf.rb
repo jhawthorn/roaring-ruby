@@ -2,9 +2,6 @@
 
 require "mkmf"
 
-#submodule = "#{__dir__}/roaring/"
-
-#$objs = ["cext.o", "roaring.o"]
-#$CPPFLAGS += " -I#{submodule} "
+$CFLAGS << " -fvisibility=hidden "
 
 create_makefile("roaring/roaring")
