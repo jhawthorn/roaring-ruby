@@ -8,7 +8,7 @@ require "prime"
 class TestSieve < Minitest::Test
   class Sieve
     def initialize
-      @bitmap = Roaring::Bitmap32.new
+      @bitmap = self.class::Bitmap.new
       @bitmap << 2
       @limit = @bitmap.max
     end
@@ -18,6 +18,12 @@ class TestSieve < Minitest::Test
         calculate(num)
       end
       @bitmap.include?(num)
+    end
+
+    def each(limit)
+      0.upto(limit).select do |i|
+        include?(i)
+      end
     end
 
     private
@@ -32,16 +38,25 @@ class TestSieve < Minitest::Test
     end
   end
 
-  def test_sieve_against_ruby_prime
-    s = Sieve.new
-    limit = 100
+  class Sieve32 < Sieve
+    Bitmap = Roaring::Bitmap32
+  end
 
-    expected = Prime.each(limit).to_a
+  class Sieve64 < Sieve
+    Bitmap = Roaring::Bitmap64
+  end
 
-    actual = 0.upto(limit).select do |i|
-      s.include?(i)
-    end
+  LIMIT = 100
 
+  def test_sieve32_against_ruby_prime
+    expected = Prime.each(LIMIT).to_a
+    actual = Sieve32.new.each(LIMIT).to_a
+    assert_equal expected, actual
+  end
+
+  def test_sieve64_against_ruby_prime
+    expected = Prime.each(LIMIT).to_a
+    actual = Sieve64.new.each(LIMIT).to_a
     assert_equal expected, actual
   end
 end
