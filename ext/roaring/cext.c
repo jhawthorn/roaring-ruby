@@ -54,7 +54,7 @@ static roaring_bitmap_t *get_bitmap(VALUE obj) {
     return bitmap;
 }
 
-static VALUE rb_roaring_initialize_copy(VALUE self, VALUE other) {
+static VALUE rb_roaring_replace(VALUE self, VALUE other) {
     roaring_bitmap_t *self_data = get_bitmap(self);
     roaring_bitmap_t *other_data = get_bitmap(other);
 
@@ -269,7 +269,7 @@ Init_roaring(void)
 
   cRoaringBitmap = rb_define_class_under(rb_mRoaring, "Bitmap", rb_cObject);
   rb_define_alloc_func(cRoaringBitmap, rb_roaring_alloc);
-  rb_define_method(cRoaringBitmap, "initialize_copy", rb_roaring_initialize_copy, 1);
+  rb_define_method(cRoaringBitmap, "replace", rb_roaring_replace, 1);
   rb_define_method(cRoaringBitmap, "empty?", rb_roaring_empty_p, 0);
   rb_define_method(cRoaringBitmap, "clear", rb_roaring_clear, 0);
   rb_define_method(cRoaringBitmap, "cardinality", rb_roaring_cardinality, 0);

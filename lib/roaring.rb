@@ -43,9 +43,8 @@ module Roaring
 
     alias eql? ==
 
-    def replace(other)
-      # FIXME: this should probably be initialize_copy and replace should be in C
-      initialize_copy(other)
+    def initialize_copy(other)
+      replace(other)
     end
 
     def self.[](*args)
