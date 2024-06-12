@@ -123,4 +123,8 @@ module Roaring
   class Bitmap32
     include BitmapCommon
   end
+
+  class Bitmap64
+    include BitmapCommon
+  end
 end

@@ -12,5 +12,6 @@
 extern VALUE rb_mRoaring;
 
 void rb_roaring32_init();
+void rb_roaring64_init();
 
 #endif
