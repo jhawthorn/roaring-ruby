@@ -1,9 +1,6 @@
 # Roaring
 
-A Ruby wrapper for CRoaring (a C/C++ implementation at https://github.com/RoaringBitmap/CRoaring)
-
-Roaring Bitmaps are a compressed bitmap/bitset format/library.
-More information and papers can be found at https://roaringbitmap.org/
+[Roaring Bitmaps](http://www.roaringbitmap.org/about/) are a compressed bitmap/bitset format/library. Think of it like a `Set` which can only hold (32-bit or 64-bit) `Integer`s, with much lower memory use and supporting fast set operations.
 
 ## Installation
 
@@ -51,6 +48,8 @@ loaded == bitmap # => true
 ```
 
 ## Development
+
+This is a Ruby wrapper around [CRoaring](https://github.com/RoaringBitmap/CRoaring)
 
 After checking out the repo, run `bin/setup` to install dependencies. Then, run `rake test` to run the tests. You can also run `bin/console` for an interactive prompt that will allow you to experiment.
 
