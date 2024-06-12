@@ -76,7 +76,7 @@ class TestSetBehavior < Minitest::Test
   end
 
   def assert_respond_to(method_name)
-    [Set, Roaring::Bitmap].each do |klass|
+    [Set, Roaring::Bitmap32].each do |klass|
       assert klass.new.respond_to?(method_name),
         "#{klass} doesn't respond_to #{method_name}"
     end
@@ -84,7 +84,7 @@ class TestSetBehavior < Minitest::Test
 
   def with_both(*args)
     sets = args.map { |a| Set.new(a) }
-    bitmaps = args.map { |a| Roaring::Bitmap.new(a) }
+    bitmaps = args.map { |a| Roaring::Bitmap32.new(a) }
 
     set_result = yield(*sets)
     bitmap_result = yield(*bitmaps)
@@ -107,7 +107,7 @@ class TestSetBehavior < Minitest::Test
 
   def assert_equivalent(set, bitmap)
     assert_kind_of Set, set
-    assert_kind_of Roaring::Bitmap, bitmap
+    assert_kind_of Roaring::Bitmap32, bitmap
 
     assert_equal set.to_a.sort, bitmap.to_a
   end

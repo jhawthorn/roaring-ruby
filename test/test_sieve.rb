@@ -8,7 +8,7 @@ require "prime"
 class TestSieve < Minitest::Test
   class Sieve
     def initialize
-      @bitmap = Roaring::Bitmap.new
+      @bitmap = Roaring::Bitmap32.new
       @bitmap << 2
       @limit = @bitmap.max
     end

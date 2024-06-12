@@ -7,7 +7,7 @@ require "set"
 module Roaring
   class Error < StandardError; end
 
-  class Bitmap
+  class Bitmap32
     include Enumerable
 
     alias size   cardinality
@@ -30,7 +30,7 @@ module Roaring
     def initialize(enum = nil)
       return unless enum
 
-      if enum.instance_of?(Roaring::Bitmap)
+      if enum.instance_of?(Roaring::Bitmap32)
         initialize_copy(enum)
       else
         enum.each { |x| self << x }

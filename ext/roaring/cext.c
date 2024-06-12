@@ -3,7 +3,7 @@
 
 #include <stdio.h>
 
-static VALUE cRoaringBitmap;
+static VALUE cRoaringBitmap32;
 VALUE rb_mRoaring;
 
 #ifndef RBOOL
@@ -21,12 +21,12 @@ NUM2UINT32(VALUE num) {
     }
 }
 
-static void rb_roaring_free(void *data)
+static void rb_roaring32_free(void *data)
 {
     roaring_bitmap_free(data);
 }
 
-static size_t rb_roaring_memsize(const void *data)
+static size_t rb_roaring32_memsize(const void *data)
 {
     // This is probably an estimate, "frozen" refers to the "frozen"
     // serialization format, which mimics the in-memory representation.
@@ -36,13 +36,13 @@ static size_t rb_roaring_memsize(const void *data)
 static const rb_data_type_t roaring_type = {
     .wrap_struct_name = "roaring/bitmap",
     .function = {
-        .dfree = rb_roaring_free,
-        .dsize = rb_roaring_memsize
+        .dfree = rb_roaring32_free,
+        .dsize = rb_roaring32_memsize
     },
     .flags = RUBY_TYPED_FREE_IMMEDIATELY,
 };
 
-static VALUE rb_roaring_alloc(VALUE self)
+static VALUE rb_roaring32_alloc(VALUE self)
 {
     roaring_bitmap_t *data = roaring_bitmap_create();
     return TypedData_Wrap_Struct(self, &roaring_type, data);
@@ -54,7 +54,7 @@ static roaring_bitmap_t *get_bitmap(VALUE obj) {
     return bitmap;
 }
 
-static VALUE rb_roaring_replace(VALUE self, VALUE other) {
+static VALUE rb_roaring32_replace(VALUE self, VALUE other) {
     roaring_bitmap_t *self_data = get_bitmap(self);
     roaring_bitmap_t *other_data = get_bitmap(other);
 
@@ -63,14 +63,14 @@ static VALUE rb_roaring_replace(VALUE self, VALUE other) {
     return self;
 }
 
-static VALUE rb_roaring_cardinality(VALUE self)
+static VALUE rb_roaring32_cardinality(VALUE self)
 {
     roaring_bitmap_t *data = get_bitmap(self);
     uint64_t cardinality = roaring_bitmap_get_cardinality(data);
     return ULONG2NUM(cardinality);
 }
 
-static VALUE rb_roaring_add(VALUE self, VALUE val)
+static VALUE rb_roaring32_add(VALUE self, VALUE val)
 {
     roaring_bitmap_t *data = get_bitmap(self);
 
@@ -79,7 +79,7 @@ static VALUE rb_roaring_add(VALUE self, VALUE val)
     return self;
 }
 
-static VALUE rb_roaring_add_p(VALUE self, VALUE val)
+static VALUE rb_roaring32_add_p(VALUE self, VALUE val)
 {
     roaring_bitmap_t *data = get_bitmap(self);
 
@@ -87,7 +87,7 @@ static VALUE rb_roaring_add_p(VALUE self, VALUE val)
     return roaring_bitmap_add_checked(data, num) ? self : Qnil;
 }
 
-static VALUE rb_roaring_remove(VALUE self, VALUE val)
+static VALUE rb_roaring32_remove(VALUE self, VALUE val)
 {
     roaring_bitmap_t *data = get_bitmap(self);
 
@@ -96,7 +96,7 @@ static VALUE rb_roaring_remove(VALUE self, VALUE val)
     return self;
 }
 
-static VALUE rb_roaring_remove_p(VALUE self, VALUE val)
+static VALUE rb_roaring32_remove_p(VALUE self, VALUE val)
 {
     roaring_bitmap_t *data = get_bitmap(self);
 
@@ -104,7 +104,7 @@ static VALUE rb_roaring_remove_p(VALUE self, VALUE val)
     return roaring_bitmap_remove_checked(data, num) ? self : Qnil;
 }
 
-static VALUE rb_roaring_include_p(VALUE self, VALUE val)
+static VALUE rb_roaring32_include_p(VALUE self, VALUE val)
 {
     roaring_bitmap_t *data = get_bitmap(self);
 
@@ -112,32 +112,32 @@ static VALUE rb_roaring_include_p(VALUE self, VALUE val)
     return RBOOL(roaring_bitmap_contains(data, num));
 }
 
-static VALUE rb_roaring_empty_p(VALUE self)
+static VALUE rb_roaring32_empty_p(VALUE self)
 {
     roaring_bitmap_t *data = get_bitmap(self);
     return RBOOL(roaring_bitmap_is_empty(data));
 }
 
-static VALUE rb_roaring_clear(VALUE self)
+static VALUE rb_roaring32_clear(VALUE self)
 {
     roaring_bitmap_t *data = get_bitmap(self);
     roaring_bitmap_clear(data);
     return self;
 }
 
-bool rb_roaring_each_i(uint32_t value, void *param) {
+bool rb_roaring32_each_i(uint32_t value, void *param) {
     rb_yield(UINT2NUM(value));
     return true;  // iterate till the end
 }
 
-static VALUE rb_roaring_each(VALUE self)
+static VALUE rb_roaring32_each(VALUE self)
 {
     roaring_bitmap_t *data = get_bitmap(self);
-    roaring_iterate(data, rb_roaring_each_i, NULL);
+    roaring_iterate(data, rb_roaring32_each_i, NULL);
     return self;
 }
 
-static VALUE rb_roaring_aref(VALUE self, VALUE rankv)
+static VALUE rb_roaring32_aref(VALUE self, VALUE rankv)
 {
     roaring_bitmap_t *data = get_bitmap(self);
 
@@ -152,7 +152,7 @@ static VALUE rb_roaring_aref(VALUE self, VALUE rankv)
     return self;
 }
 
-static VALUE rb_roaring_min(VALUE self)
+static VALUE rb_roaring32_min(VALUE self)
 {
     roaring_bitmap_t *data = get_bitmap(self);
 
@@ -164,7 +164,7 @@ static VALUE rb_roaring_min(VALUE self)
     }
 }
 
-static VALUE rb_roaring_max(VALUE self)
+static VALUE rb_roaring32_max(VALUE self)
 {
     roaring_bitmap_t *data = get_bitmap(self);
 
@@ -176,13 +176,13 @@ static VALUE rb_roaring_max(VALUE self)
     }
 }
 
-static VALUE rb_roaring_run_optimize(VALUE self)
+static VALUE rb_roaring32_run_optimize(VALUE self)
 {
     roaring_bitmap_t *data = get_bitmap(self);
     return RBOOL(roaring_bitmap_run_optimize(data));
 }
 
-static VALUE rb_roaring_serialize(VALUE self)
+static VALUE rb_roaring32_serialize(VALUE self)
 {
     roaring_bitmap_t *data = get_bitmap(self);
 
@@ -195,25 +195,25 @@ static VALUE rb_roaring_serialize(VALUE self)
     return str;
 }
 
-static VALUE rb_roaring_deserialize(VALUE self, VALUE str)
+static VALUE rb_roaring32_deserialize(VALUE self, VALUE str)
 {
     roaring_bitmap_t *bitmap = roaring_bitmap_portable_deserialize_safe(RSTRING_PTR(str), RSTRING_LEN(str));
 
-    return TypedData_Wrap_Struct(cRoaringBitmap, &roaring_type, bitmap);
+    return TypedData_Wrap_Struct(cRoaringBitmap32, &roaring_type, bitmap);
 }
 
 typedef roaring_bitmap_t *binary_func(const roaring_bitmap_t *, const roaring_bitmap_t *);
-static VALUE rb_roaring_binary_op(VALUE self, VALUE other, binary_func func) {
+static VALUE rb_roaring32_binary_op(VALUE self, VALUE other, binary_func func) {
     roaring_bitmap_t *self_data = get_bitmap(self);
     roaring_bitmap_t *other_data = get_bitmap(other);
 
     roaring_bitmap_t *result = func(self_data, other_data);
 
-    return TypedData_Wrap_Struct(cRoaringBitmap, &roaring_type, result);
+    return TypedData_Wrap_Struct(cRoaringBitmap32, &roaring_type, result);
 }
 
 typedef bool binary_func_bool(const roaring_bitmap_t *, const roaring_bitmap_t *);
-static VALUE rb_roaring_binary_op_bool(VALUE self, VALUE other, binary_func_bool func) {
+static VALUE rb_roaring32_binary_op_bool(VALUE self, VALUE other, binary_func_bool func) {
     roaring_bitmap_t *self_data = get_bitmap(self);
     roaring_bitmap_t *other_data = get_bitmap(other);
 
@@ -222,44 +222,44 @@ static VALUE rb_roaring_binary_op_bool(VALUE self, VALUE other, binary_func_bool
 }
 
 
-static VALUE rb_roaring_and(VALUE self, VALUE other)
+static VALUE rb_roaring32_and(VALUE self, VALUE other)
 {
-    return rb_roaring_binary_op(self, other, roaring_bitmap_and);
+    return rb_roaring32_binary_op(self, other, roaring_bitmap_and);
 }
 
-static VALUE rb_roaring_or(VALUE self, VALUE other)
+static VALUE rb_roaring32_or(VALUE self, VALUE other)
 {
-    return rb_roaring_binary_op(self, other, roaring_bitmap_or);
+    return rb_roaring32_binary_op(self, other, roaring_bitmap_or);
 }
 
-static VALUE rb_roaring_xor(VALUE self, VALUE other)
+static VALUE rb_roaring32_xor(VALUE self, VALUE other)
 {
-    return rb_roaring_binary_op(self, other, roaring_bitmap_xor);
+    return rb_roaring32_binary_op(self, other, roaring_bitmap_xor);
 }
 
-static VALUE rb_roaring_andnot(VALUE self, VALUE other)
+static VALUE rb_roaring32_andnot(VALUE self, VALUE other)
 {
-    return rb_roaring_binary_op(self, other, roaring_bitmap_andnot);
+    return rb_roaring32_binary_op(self, other, roaring_bitmap_andnot);
 }
 
-static VALUE rb_roaring_eq(VALUE self, VALUE other)
+static VALUE rb_roaring32_eq(VALUE self, VALUE other)
 {
-    return rb_roaring_binary_op_bool(self, other, roaring_bitmap_equals);
+    return rb_roaring32_binary_op_bool(self, other, roaring_bitmap_equals);
 }
 
-static VALUE rb_roaring_lt(VALUE self, VALUE other)
+static VALUE rb_roaring32_lt(VALUE self, VALUE other)
 {
-    return rb_roaring_binary_op_bool(self, other, roaring_bitmap_is_strict_subset);
+    return rb_roaring32_binary_op_bool(self, other, roaring_bitmap_is_strict_subset);
 }
 
-static VALUE rb_roaring_lte(VALUE self, VALUE other)
+static VALUE rb_roaring32_lte(VALUE self, VALUE other)
 {
-    return rb_roaring_binary_op_bool(self, other, roaring_bitmap_is_subset);
+    return rb_roaring32_binary_op_bool(self, other, roaring_bitmap_is_subset);
 }
 
-static VALUE rb_roaring_intersect_p(VALUE self, VALUE other)
+static VALUE rb_roaring32_intersect_p(VALUE self, VALUE other)
 {
-    return rb_roaring_binary_op_bool(self, other, roaring_bitmap_intersect);
+    return rb_roaring32_binary_op_bool(self, other, roaring_bitmap_intersect);
 }
 
 void
@@ -267,36 +267,36 @@ Init_roaring(void)
 {
   rb_mRoaring = rb_define_module("Roaring");
 
-  cRoaringBitmap = rb_define_class_under(rb_mRoaring, "Bitmap", rb_cObject);
-  rb_define_alloc_func(cRoaringBitmap, rb_roaring_alloc);
-  rb_define_method(cRoaringBitmap, "replace", rb_roaring_replace, 1);
-  rb_define_method(cRoaringBitmap, "empty?", rb_roaring_empty_p, 0);
-  rb_define_method(cRoaringBitmap, "clear", rb_roaring_clear, 0);
-  rb_define_method(cRoaringBitmap, "cardinality", rb_roaring_cardinality, 0);
-  rb_define_method(cRoaringBitmap, "add", rb_roaring_add, 1);
-  rb_define_method(cRoaringBitmap, "add?", rb_roaring_add_p, 1);
-  rb_define_method(cRoaringBitmap, "<<", rb_roaring_add, 1);
-  rb_define_method(cRoaringBitmap, "remove", rb_roaring_remove, 1);
-  rb_define_method(cRoaringBitmap, "remove?", rb_roaring_remove_p, 1);
-  rb_define_method(cRoaringBitmap, "include?", rb_roaring_include_p, 1);
-  rb_define_method(cRoaringBitmap, "each", rb_roaring_each, 0);
-  rb_define_method(cRoaringBitmap, "[]", rb_roaring_aref, 1);
+  cRoaringBitmap32 = rb_define_class_under(rb_mRoaring, "Bitmap32", rb_cObject);
+  rb_define_alloc_func(cRoaringBitmap32, rb_roaring32_alloc);
+  rb_define_method(cRoaringBitmap32, "replace", rb_roaring32_replace, 1);
+  rb_define_method(cRoaringBitmap32, "empty?", rb_roaring32_empty_p, 0);
+  rb_define_method(cRoaringBitmap32, "clear", rb_roaring32_clear, 0);
+  rb_define_method(cRoaringBitmap32, "cardinality", rb_roaring32_cardinality, 0);
+  rb_define_method(cRoaringBitmap32, "add", rb_roaring32_add, 1);
+  rb_define_method(cRoaringBitmap32, "add?", rb_roaring32_add_p, 1);
+  rb_define_method(cRoaringBitmap32, "<<", rb_roaring32_add, 1);
+  rb_define_method(cRoaringBitmap32, "remove", rb_roaring32_remove, 1);
+  rb_define_method(cRoaringBitmap32, "remove?", rb_roaring32_remove_p, 1);
+  rb_define_method(cRoaringBitmap32, "include?", rb_roaring32_include_p, 1);
+  rb_define_method(cRoaringBitmap32, "each", rb_roaring32_each, 0);
+  rb_define_method(cRoaringBitmap32, "[]", rb_roaring32_aref, 1);
 
-  rb_define_method(cRoaringBitmap, "&", rb_roaring_and, 1);
-  rb_define_method(cRoaringBitmap, "|", rb_roaring_or, 1);
-  rb_define_method(cRoaringBitmap, "^", rb_roaring_xor, 1);
-  rb_define_method(cRoaringBitmap, "-", rb_roaring_andnot, 1);
+  rb_define_method(cRoaringBitmap32, "&", rb_roaring32_and, 1);
+  rb_define_method(cRoaringBitmap32, "|", rb_roaring32_or, 1);
+  rb_define_method(cRoaringBitmap32, "^", rb_roaring32_xor, 1);
+  rb_define_method(cRoaringBitmap32, "-", rb_roaring32_andnot, 1);
 
-  rb_define_method(cRoaringBitmap, "==", rb_roaring_eq, 1);
-  rb_define_method(cRoaringBitmap, "<", rb_roaring_lt, 1);
-  rb_define_method(cRoaringBitmap, "<=", rb_roaring_lte, 1);
-  rb_define_method(cRoaringBitmap, "intersect?", rb_roaring_intersect_p, 1);
+  rb_define_method(cRoaringBitmap32, "==", rb_roaring32_eq, 1);
+  rb_define_method(cRoaringBitmap32, "<", rb_roaring32_lt, 1);
+  rb_define_method(cRoaringBitmap32, "<=", rb_roaring32_lte, 1);
+  rb_define_method(cRoaringBitmap32, "intersect?", rb_roaring32_intersect_p, 1);
 
-  rb_define_method(cRoaringBitmap, "min", rb_roaring_min, 0);
-  rb_define_method(cRoaringBitmap, "max", rb_roaring_max, 0);
+  rb_define_method(cRoaringBitmap32, "min", rb_roaring32_min, 0);
+  rb_define_method(cRoaringBitmap32, "max", rb_roaring32_max, 0);
 
-  rb_define_method(cRoaringBitmap, "run_optimize", rb_roaring_run_optimize, 0);
+  rb_define_method(cRoaringBitmap32, "run_optimize", rb_roaring32_run_optimize, 0);
 
-  rb_define_method(cRoaringBitmap, "serialize", rb_roaring_serialize, 0);
-  rb_define_singleton_method(cRoaringBitmap, "deserialize", rb_roaring_deserialize, 1);
+  rb_define_method(cRoaringBitmap32, "serialize", rb_roaring32_serialize, 0);
+  rb_define_singleton_method(cRoaringBitmap32, "deserialize", rb_roaring32_deserialize, 1);
 }

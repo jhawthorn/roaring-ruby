@@ -10,7 +10,7 @@ class TestRoaring < Minitest::Test
   end
 
   def test_simple_example
-    bitmap = Roaring::Bitmap.new
+    bitmap = Roaring::Bitmap32.new
     100.upto(999) do |i|
       bitmap << i
     end
@@ -46,21 +46,21 @@ class TestRoaring < Minitest::Test
 
     if i < 0 || i >= 2**32
       define_method("#{name}_is_rejected") do
-        bitmap = Roaring::Bitmap.new
+        bitmap = Roaring::Bitmap32.new
         assert_raises RangeError do
           bitmap << i
         end
       end
     else
       define_method("#{name}_round_trips") do
-        bitmap = Roaring::Bitmap[i]
+        bitmap = Roaring::Bitmap32[i]
         assert_equal i, bitmap.first
       end
     end
   end
 
   def test_type_error
-    bitmap = Roaring::Bitmap.new
+    bitmap = Roaring::Bitmap32.new
     assert_raises TypeError do
       bitmap << "2"
     end
@@ -73,7 +73,7 @@ class TestRoaring < Minitest::Test
   end
 
   def test_add
-    bitmap = Roaring::Bitmap[1, 2]
+    bitmap = Roaring::Bitmap32[1, 2]
     bitmap.add(3)
     assert_equal [1, 2, 3], bitmap.to_a
     bitmap.add(2)
@@ -81,7 +81,7 @@ class TestRoaring < Minitest::Test
   end
 
   def test_add_p
-    bitmap = Roaring::Bitmap[1, 2]
+    bitmap = Roaring::Bitmap32[1, 2]
     assert bitmap.add?(3)
     assert_equal [1, 2, 3], bitmap.to_a
     assert_nil bitmap.add?(2)
@@ -89,7 +89,7 @@ class TestRoaring < Minitest::Test
   end
 
   def test_remove
-    bitmap = Roaring::Bitmap[1, 2, 3, 4]
+    bitmap = Roaring::Bitmap32[1, 2, 3, 4]
     assert_equal [1, 2, 3, 4], bitmap.to_a
     bitmap.remove(3)
     assert_equal [1, 2, 4], bitmap.to_a
@@ -98,7 +98,7 @@ class TestRoaring < Minitest::Test
   end
 
   def test_remove_p
-    bitmap = Roaring::Bitmap[1, 2, 3, 4]
+    bitmap = Roaring::Bitmap32[1, 2, 3, 4]
     assert_equal [1, 2, 3, 4], bitmap.to_a
     assert bitmap.remove?(3)
     assert_equal [1, 2, 4], bitmap.to_a
@@ -107,7 +107,7 @@ class TestRoaring < Minitest::Test
   end
 
   def test_empty_p
-    bitmap = Roaring::Bitmap.new
+    bitmap = Roaring::Bitmap32.new
     assert bitmap.empty?
 
     bitmap << 1
@@ -115,7 +115,7 @@ class TestRoaring < Minitest::Test
   end
 
   def test_clear
-    bitmap = Roaring::Bitmap.new
+    bitmap = Roaring::Bitmap32.new
     assert bitmap.empty?
     assert_equal 0, bitmap.cardinality
 
@@ -131,7 +131,7 @@ class TestRoaring < Minitest::Test
   end
 
   def test_it_raises_on_too_large_num
-    bitmap = Roaring::Bitmap.new
+    bitmap = Roaring::Bitmap32.new
     assert_raises RangeError do
       bitmap << 2**65
     end
@@ -141,14 +141,14 @@ class TestRoaring < Minitest::Test
   end
 
   def test_include
-    bitmap = Roaring::Bitmap[1, 2, 5, 7]
+    bitmap = Roaring::Bitmap32[1, 2, 5, 7]
 
     result = (0..10).select {|x| bitmap.include?(x) }
     assert_equal [1, 2, 5, 7], result
   end
 
   def test_each
-    bitmap = Roaring::Bitmap[1, 2, 5, 7]
+    bitmap = Roaring::Bitmap32[1, 2, 5, 7]
     result = []
     bitmap.each do |x|
       result << x
@@ -157,7 +157,7 @@ class TestRoaring < Minitest::Test
   end
 
   def test_each_with_break
-    bitmap = Roaring::Bitmap[1, 2, 3]
+    bitmap = Roaring::Bitmap32[1, 2, 3]
     result = bitmap.each do
       break 123
     end
@@ -165,15 +165,15 @@ class TestRoaring < Minitest::Test
   end
 
   def test_map
-    bitmap = Roaring::Bitmap[1, 2, 5, 7]
+    bitmap = Roaring::Bitmap32[1, 2, 5, 7]
     result = bitmap.map(&:itself)
     assert_equal [1, 2, 5, 7], result
   end
 
   def test_eq
-    r1 = Roaring::Bitmap[1, 2, 3, 4]
-    r2 = Roaring::Bitmap[1, 2, 3, 4]
-    r3 = Roaring::Bitmap[1, 2, 3]
+    r1 = Roaring::Bitmap32[1, 2, 3, 4]
+    r2 = Roaring::Bitmap32[1, 2, 3, 4]
+    r3 = Roaring::Bitmap32[1, 2, 3]
 
     assert_equal r1, r1
     assert_equal r1, r2
@@ -183,8 +183,8 @@ class TestRoaring < Minitest::Test
   end
 
   def test_comparisons
-    r1 = Roaring::Bitmap[1, 2, 3, 4]
-    r2 = Roaring::Bitmap[1, 2, 3]
+    r1 = Roaring::Bitmap32[1, 2, 3, 4]
+    r2 = Roaring::Bitmap32[1, 2, 3]
 
     assert r1 <= r1
     assert r1 >= r1
@@ -203,9 +203,9 @@ class TestRoaring < Minitest::Test
   end
 
   def test_intersect
-    r1 = Roaring::Bitmap[1, 2]
-    r2 = Roaring::Bitmap[2, 3]
-    r3 = Roaring::Bitmap[3, 4]
+    r1 = Roaring::Bitmap32[1, 2]
+    r2 = Roaring::Bitmap32[2, 3]
+    r3 = Roaring::Bitmap32[3, 4]
 
     assert r1.intersect?(r2)
     assert r2.intersect?(r1)
@@ -224,47 +224,47 @@ class TestRoaring < Minitest::Test
   end
 
   def test_and
-    r1 = Roaring::Bitmap[1, 2, 3, 4]
-    r2 = Roaring::Bitmap[3, 4, 5, 6]
+    r1 = Roaring::Bitmap32[1, 2, 3, 4]
+    r2 = Roaring::Bitmap32[3, 4, 5, 6]
     result = r1 & r2
     assert_equal [3, 4], result.to_a
   end
 
   def test_or
-    r1 = Roaring::Bitmap[1, 2, 3, 4]
-    r2 = Roaring::Bitmap[3, 4, 5, 6]
+    r1 = Roaring::Bitmap32[1, 2, 3, 4]
+    r2 = Roaring::Bitmap32[3, 4, 5, 6]
     result = r1 | r2
     assert_equal [1, 2, 3, 4, 5, 6], result.to_a
   end
 
   def test_xor
-    r1 = Roaring::Bitmap[1, 2, 3, 4]
-    r2 = Roaring::Bitmap[3, 4, 5, 6]
+    r1 = Roaring::Bitmap32[1, 2, 3, 4]
+    r2 = Roaring::Bitmap32[3, 4, 5, 6]
     result = r1 ^ r2
     assert_equal [1, 2, 5, 6], result.to_a
   end
 
   def test_difference
-    r1 = Roaring::Bitmap[1, 2, 3, 4]
-    r2 = Roaring::Bitmap[3, 4, 5, 6]
+    r1 = Roaring::Bitmap32[1, 2, 3, 4]
+    r2 = Roaring::Bitmap32[3, 4, 5, 6]
     result = r1 - r2
     assert_equal [1, 2], result.to_a
   end
 
   def test_min_and_max
-    bitmap = Roaring::Bitmap.new
+    bitmap = Roaring::Bitmap32.new
     bitmap << 5 << 2 << 9 << 7
     assert_equal 2, bitmap.min
     assert_equal 2, bitmap.first
     assert_equal 9, bitmap.max
     assert_equal 9, bitmap.last
 
-    assert_nil Bitmap[].min
-    assert_nil Bitmap[].max
+    assert_nil Bitmap32[].min
+    assert_nil Bitmap32[].max
   end
 
   def test_aref
-    bitmap = Roaring::Bitmap[1, 2, 99]
+    bitmap = Roaring::Bitmap32[1, 2, 99]
     assert_equal 1, bitmap[0]
     assert_equal 2, bitmap[1]
     assert_equal 99, bitmap[2]
@@ -273,16 +273,16 @@ class TestRoaring < Minitest::Test
   end
 
   def test_serialize
-    original = Roaring::Bitmap[1, 2, 3, 4]
+    original = Roaring::Bitmap32[1, 2, 3, 4]
 
     dump = original.serialize
-    bitmap = Roaring::Bitmap.deserialize(dump)
+    bitmap = Roaring::Bitmap32.deserialize(dump)
 
     assert_equal original, bitmap
   end
 
   def test_marshal
-    original = Roaring::Bitmap[1, 2, 3, 4]
+    original = Roaring::Bitmap32[1, 2, 3, 4]
 
     dump = Marshal.dump(original)
     bitmap = Marshal.load(dump)
@@ -291,7 +291,7 @@ class TestRoaring < Minitest::Test
   end
 
   def test_dup
-    r1 = Roaring::Bitmap[1, 2, 3, 4]
+    r1 = Roaring::Bitmap32[1, 2, 3, 4]
 
     assert_equal r1.dup, r1
     assert_equal r1.clone, r1
@@ -306,7 +306,7 @@ class TestRoaring < Minitest::Test
   def test_memsize
     require "objspace"
 
-    bitmap = Roaring::Bitmap.new
+    bitmap = Roaring::Bitmap32.new
     assert ObjectSpace.memsize_of(bitmap) > 80
 
     0.upto(1_000_000) do |i|
@@ -322,13 +322,13 @@ class TestRoaring < Minitest::Test
   end
 
   def test_inspect
-    bitmap = Roaring::Bitmap[]
-    assert_equal "#<Roaring::Bitmap {}>", bitmap.inspect
+    bitmap = Roaring::Bitmap32[]
+    assert_equal "#<Roaring::Bitmap32 {}>", bitmap.inspect
 
-    bitmap = Roaring::Bitmap[1, 2, 3, 4]
-    assert_equal "#<Roaring::Bitmap {1, 2, 3, 4}>", bitmap.inspect
+    bitmap = Roaring::Bitmap32[1, 2, 3, 4]
+    assert_equal "#<Roaring::Bitmap32 {1, 2, 3, 4}>", bitmap.inspect
 
-    bitmap = Roaring::Bitmap[0...1000]
-    assert_equal "#<Roaring::Bitmap (1000 values)>", bitmap.inspect
+    bitmap = Roaring::Bitmap32[0...1000]
+    assert_equal "#<Roaring::Bitmap32 (1000 values)>", bitmap.inspect
   end
 end
