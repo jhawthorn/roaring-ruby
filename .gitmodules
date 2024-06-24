@@ -1,3 +1,0 @@
-[submodule "ext/roaring/roaring"]
-	path = ext/roaring/roaring
-	url = https://github.com/RoaringBitmap/CRoaring
