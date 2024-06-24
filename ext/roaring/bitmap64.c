@@ -56,7 +56,7 @@ static VALUE rb_roaring64_replace(VALUE self, VALUE other) {
     // FIXME: Very likely a newer version of CRoaring will have
     //roaring64_bitmap_overwrite(self_data, other_data);
 
-    roaring64_bitmap_remove_range_closed(self_data, 0, UINT64_MAX);
+    roaring64_bitmap_clear(self_data);
     roaring64_bitmap_or_inplace(self_data, other_data);
 
     return self;
@@ -120,8 +120,7 @@ static VALUE rb_roaring64_empty_p(VALUE self)
 static VALUE rb_roaring64_clear(VALUE self)
 {
     roaring64_bitmap_t *data = get_bitmap(self);
-    // roaring64_bitmap_clear(data); // Doesn't exist yet in 4.0.0
-    roaring64_bitmap_remove_range_closed(data, 0, UINT64_MAX);
+    roaring64_bitmap_clear(data);
     return self;
 }
 
