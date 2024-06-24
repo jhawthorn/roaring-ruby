@@ -26,9 +26,10 @@ bitmap << (2**64 - 1)
 bitmap.each { }
 bitmap.first # => 1
 bitmap.min   # => 1
-bitmap.max   # => 4294967295
-bitmap.last  # => 4294967295
+bitmap.max   # => 18446744073709551615
+bitmap.last  # => 18446744073709551615
 bitmap[3]    # => 999
+bitmap.to_a  # => [1, 2, 3, 999, 4294967297, 18446744073709551615]
 
 b1 = Roaring::Bitmap64.new(200...500)
 b2 = Roaring::Bitmap64.new(100...1000)
