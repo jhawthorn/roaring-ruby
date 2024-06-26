@@ -23,6 +23,7 @@ GEM
     reline (0.3.1)
       io-console (~> 0.5)
     singleton (0.1.1)
+    yard (0.9.36)
 
 PLATFORMS
   arm64-darwin-23
@@ -35,6 +36,7 @@ DEPENDENCIES
   rake (~> 13.0)
   rake-compiler
   roaring!
+  yard
 
 BUNDLED WITH
    2.3.4
