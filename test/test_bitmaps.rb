@@ -229,6 +229,7 @@ module BitmapTests
     r1 = bitmap_class[1, 2, 3, 4]
     r2 = bitmap_class[3, 4, 5, 6]
     result = r1 & r2
+    refute_same r1, result
     assert_equal [3, 4], result.to_a
   end
 
@@ -236,6 +237,7 @@ module BitmapTests
     r1 = bitmap_class[1, 2, 3, 4]
     r2 = bitmap_class[3, 4, 5, 6]
     result = r1 | r2
+    refute_same r1, result
     assert_equal [1, 2, 3, 4, 5, 6], result.to_a
   end
 
@@ -243,6 +245,7 @@ module BitmapTests
     r1 = bitmap_class[1, 2, 3, 4]
     r2 = bitmap_class[3, 4, 5, 6]
     result = r1 ^ r2
+    refute_same r1, result
     assert_equal [1, 2, 5, 6], result.to_a
   end
 
@@ -250,6 +253,39 @@ module BitmapTests
     r1 = bitmap_class[1, 2, 3, 4]
     r2 = bitmap_class[3, 4, 5, 6]
     result = r1 - r2
+    refute_same r1, result
+    assert_equal [1, 2], result.to_a
+  end
+
+  def test_and_inplace
+    r1 = bitmap_class[1, 2, 3, 4]
+    r2 = bitmap_class[3, 4, 5, 6]
+    result = r1.and!(r2)
+    assert_same r1, result
+    assert_equal [3, 4], result.to_a
+  end
+
+  def test_or_inplace
+    r1 = bitmap_class[1, 2, 3, 4]
+    r2 = bitmap_class[3, 4, 5, 6]
+    result = r1.or!(r2)
+    assert_same r1, result
+    assert_equal [1, 2, 3, 4, 5, 6], result.to_a
+  end
+
+  def test_xor_inplace
+    r1 = bitmap_class[1, 2, 3, 4]
+    r2 = bitmap_class[3, 4, 5, 6]
+    result = r1.xor!(r2)
+    assert_same r1, result
+    assert_equal [1, 2, 5, 6], result.to_a
+  end
+
+  def test_difference_inplace
+    r1 = bitmap_class[1, 2, 3, 4]
+    r2 = bitmap_class[3, 4, 5, 6]
+    result = r1.andnot!(r2)
+    assert_same r1, result
     assert_equal [1, 2], result.to_a
   end
 

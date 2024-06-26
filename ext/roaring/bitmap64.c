@@ -243,6 +243,16 @@ static VALUE rb_roaring64_binary_op(VALUE self, VALUE other, binary_func func) {
     return TypedData_Wrap_Struct(cRoaringBitmap64, &roaring64_type, result);
 }
 
+typedef void binary_func_inplace(roaring64_bitmap_t *, const roaring64_bitmap_t *);
+static VALUE rb_roaring64_binary_op_inplace(VALUE self, VALUE other, binary_func_inplace func) {
+    roaring64_bitmap_t *self_data = get_bitmap(self);
+    roaring64_bitmap_t *other_data = get_bitmap(other);
+
+    func(self_data, other_data);
+
+    return self;
+}
+
 typedef bool binary_func_bool(const roaring64_bitmap_t *, const roaring64_bitmap_t *);
 static VALUE rb_roaring64_binary_op_bool(VALUE self, VALUE other, binary_func_bool func) {
     roaring64_bitmap_t *self_data = get_bitmap(self);
@@ -252,6 +262,25 @@ static VALUE rb_roaring64_binary_op_bool(VALUE self, VALUE other, binary_func_bo
     return RBOOL(result);
 }
 
+static VALUE rb_roaring64_and_inplace(VALUE self, VALUE other)
+{
+    return rb_roaring64_binary_op_inplace(self, other, roaring64_bitmap_and_inplace);
+}
+
+static VALUE rb_roaring64_or_inplace(VALUE self, VALUE other)
+{
+    return rb_roaring64_binary_op_inplace(self, other, roaring64_bitmap_or_inplace);
+}
+
+static VALUE rb_roaring64_xor_inplace(VALUE self, VALUE other)
+{
+    return rb_roaring64_binary_op_inplace(self, other, roaring64_bitmap_xor_inplace);
+}
+
+static VALUE rb_roaring64_andnot_inplace(VALUE self, VALUE other)
+{
+    return rb_roaring64_binary_op_inplace(self, other, roaring64_bitmap_andnot_inplace);
+}
 
 static VALUE rb_roaring64_and(VALUE self, VALUE other)
 {
@@ -310,6 +339,11 @@ rb_roaring64_init(void)
   rb_define_method(cRoaringBitmap64, "include?", rb_roaring64_include_p, 1);
   rb_define_method(cRoaringBitmap64, "each", rb_roaring64_each, 0);
   rb_define_method(cRoaringBitmap64, "[]", rb_roaring64_aref, 1);
+
+  rb_define_method(cRoaringBitmap64, "and!", rb_roaring64_and_inplace, 1);
+  rb_define_method(cRoaringBitmap64, "or!", rb_roaring64_or_inplace, 1);
+  rb_define_method(cRoaringBitmap64, "xor!", rb_roaring64_xor_inplace, 1);
+  rb_define_method(cRoaringBitmap64, "andnot!", rb_roaring64_andnot_inplace, 1);
 
   rb_define_method(cRoaringBitmap64, "&", rb_roaring64_and, 1);
   rb_define_method(cRoaringBitmap64, "|", rb_roaring64_or, 1);

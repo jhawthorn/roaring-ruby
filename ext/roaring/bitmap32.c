@@ -238,6 +238,16 @@ static VALUE rb_roaring32_binary_op(VALUE self, VALUE other, binary_func func) {
     return TypedData_Wrap_Struct(cRoaringBitmap32, &roaring_type, result);
 }
 
+typedef void binary_func_inplace(roaring_bitmap_t *, const roaring_bitmap_t *);
+static VALUE rb_roaring32_binary_op_inplace(VALUE self, VALUE other, binary_func_inplace func) {
+    roaring_bitmap_t *self_data = get_bitmap(self);
+    roaring_bitmap_t *other_data = get_bitmap(other);
+
+    func(self_data, other_data);
+
+    return self;
+}
+
 typedef bool binary_func_bool(const roaring_bitmap_t *, const roaring_bitmap_t *);
 static VALUE rb_roaring32_binary_op_bool(VALUE self, VALUE other, binary_func_bool func) {
     roaring_bitmap_t *self_data = get_bitmap(self);
@@ -247,6 +257,25 @@ static VALUE rb_roaring32_binary_op_bool(VALUE self, VALUE other, binary_func_bo
     return RBOOL(result);
 }
 
+static VALUE rb_roaring32_and_inplace(VALUE self, VALUE other)
+{
+    return rb_roaring32_binary_op_inplace(self, other, roaring_bitmap_and_inplace);
+}
+
+static VALUE rb_roaring32_or_inplace(VALUE self, VALUE other)
+{
+    return rb_roaring32_binary_op_inplace(self, other, roaring_bitmap_or_inplace);
+}
+
+static VALUE rb_roaring32_xor_inplace(VALUE self, VALUE other)
+{
+    return rb_roaring32_binary_op_inplace(self, other, roaring_bitmap_xor_inplace);
+}
+
+static VALUE rb_roaring32_andnot_inplace(VALUE self, VALUE other)
+{
+    return rb_roaring32_binary_op_inplace(self, other, roaring_bitmap_andnot_inplace);
+}
 
 static VALUE rb_roaring32_and(VALUE self, VALUE other)
 {
@@ -305,6 +334,11 @@ rb_roaring32_init(void)
   rb_define_method(cRoaringBitmap32, "include?", rb_roaring32_include_p, 1);
   rb_define_method(cRoaringBitmap32, "each", rb_roaring32_each, 0);
   rb_define_method(cRoaringBitmap32, "[]", rb_roaring32_aref, 1);
+
+  rb_define_method(cRoaringBitmap32, "and!", rb_roaring32_and_inplace, 1);
+  rb_define_method(cRoaringBitmap32, "or!", rb_roaring32_or_inplace, 1);
+  rb_define_method(cRoaringBitmap32, "xor!", rb_roaring32_xor_inplace, 1);
+  rb_define_method(cRoaringBitmap32, "andnot!", rb_roaring32_andnot_inplace, 1);
 
   rb_define_method(cRoaringBitmap32, "&", rb_roaring32_and, 1);
   rb_define_method(cRoaringBitmap32, "|", rb_roaring32_or, 1);
