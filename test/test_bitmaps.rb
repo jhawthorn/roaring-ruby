@@ -305,6 +305,33 @@ module BitmapTests
     assert_equal [5], (r1 - r2).to_a
   end
 
+  def test_statistics
+    bitmap = bitmap_class[]
+
+    expected = {
+      n_containers: 0,
+      n_array_containers: 0,
+      n_run_containers: 0,
+      n_bitset_containers: 0,
+      n_values_array_containers: 0,
+      n_values_run_containers: 0,
+      n_values_bitset_containers: 0,
+      n_bytes_array_containers: 0,
+      n_bytes_run_containers: 0,
+      n_bytes_bitset_containers: 0,
+      max_value: 0,
+      min_value: bitmap_class::MAX,
+      cardinality: 0
+    }
+    assert_equal expected, bitmap.statistics
+
+    bitmap << 1
+    assert_equal 1, bitmap.statistics[:n_containers]
+    assert_equal 1, bitmap.statistics[:min_value]
+    assert_equal 1, bitmap.statistics[:max_value]
+    assert_equal 1, bitmap.statistics[:cardinality]
+  end
+
   def test_inspect
     bitmap = bitmap_class[]
     assert_equal "#<#{bitmap_class} {}>", bitmap.inspect

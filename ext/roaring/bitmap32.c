@@ -196,6 +196,38 @@ static VALUE rb_roaring32_deserialize(VALUE self, VALUE str)
     return TypedData_Wrap_Struct(cRoaringBitmap32, &roaring_type, bitmap);
 }
 
+static VALUE rb_roaring32_statistics(VALUE self)
+{
+    roaring_bitmap_t *data = get_bitmap(self);
+
+    roaring_statistics_t stat;
+
+    roaring_bitmap_statistics(data, &stat);
+
+    VALUE ret = rb_hash_new();
+#define ADD_STAT(name) \
+    rb_hash_aset(ret, rb_id2sym(rb_intern(#name)), ULL2NUM(stat.name))
+
+    ADD_STAT(n_containers);
+    ADD_STAT(n_array_containers);
+    ADD_STAT(n_run_containers);
+    ADD_STAT(n_bitset_containers);
+    ADD_STAT(n_values_array_containers);
+    ADD_STAT(n_values_run_containers);
+    ADD_STAT(n_values_bitset_containers);
+    ADD_STAT(n_bytes_array_containers);
+    ADD_STAT(n_bytes_run_containers);
+    ADD_STAT(n_bytes_bitset_containers);
+    ADD_STAT(max_value);
+    ADD_STAT(min_value);
+    // ADD_STAT(sum_value); // deprecated, skipped
+    ADD_STAT(cardinality);
+
+#undef ADD_STAT
+
+    return ret;
+}
+
 typedef roaring_bitmap_t *binary_func(const roaring_bitmap_t *, const roaring_bitmap_t *);
 static VALUE rb_roaring32_binary_op(VALUE self, VALUE other, binary_func func) {
     roaring_bitmap_t *self_data = get_bitmap(self);
@@ -288,6 +320,7 @@ rb_roaring32_init(void)
   rb_define_method(cRoaringBitmap32, "max", rb_roaring32_max, 0);
 
   rb_define_method(cRoaringBitmap32, "run_optimize", rb_roaring32_run_optimize, 0);
+  rb_define_method(cRoaringBitmap32, "statistics", rb_roaring32_statistics, 0);
 
   rb_define_method(cRoaringBitmap32, "serialize", rb_roaring32_serialize, 0);
   rb_define_singleton_method(cRoaringBitmap32, "deserialize", rb_roaring32_deserialize, 1);
