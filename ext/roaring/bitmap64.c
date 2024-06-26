@@ -345,10 +345,10 @@ rb_roaring64_init(void)
   rb_define_method(cRoaringBitmap64, "xor!", rb_roaring64_xor_inplace, 1);
   rb_define_method(cRoaringBitmap64, "andnot!", rb_roaring64_andnot_inplace, 1);
 
-  rb_define_method(cRoaringBitmap64, "&", rb_roaring64_and, 1);
-  rb_define_method(cRoaringBitmap64, "|", rb_roaring64_or, 1);
-  rb_define_method(cRoaringBitmap64, "^", rb_roaring64_xor, 1);
-  rb_define_method(cRoaringBitmap64, "-", rb_roaring64_andnot, 1);
+  rb_define_method(cRoaringBitmap64, "and", rb_roaring64_and, 1);
+  rb_define_method(cRoaringBitmap64, "or", rb_roaring64_or, 1);
+  rb_define_method(cRoaringBitmap64, "xor", rb_roaring64_xor, 1);
+  rb_define_method(cRoaringBitmap64, "andnot", rb_roaring64_andnot, 1);
 
   rb_define_method(cRoaringBitmap64, "==", rb_roaring64_eq, 1);
   rb_define_method(cRoaringBitmap64, "<", rb_roaring64_lt, 1);

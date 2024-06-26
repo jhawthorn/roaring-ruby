@@ -17,10 +17,14 @@ module Roaring
       base.alias_method :length, :cardinality
       base.alias_method :count, :cardinality
 
-      base.alias_method :+, :|
-      base.alias_method :union, :|
-      base.alias_method :intersection, :&
-      base.alias_method :difference, :-
+      base.alias_method :&, :and
+      base.alias_method :|, :or
+      base.alias_method :^, :xor
+      base.alias_method :-, :andnot
+      base.alias_method :+, :or
+      base.alias_method :union, :or
+      base.alias_method :intersection, :and
+      base.alias_method :difference, :andnot
 
       base.alias_method :delete, :remove
       base.alias_method :delete?, :remove?

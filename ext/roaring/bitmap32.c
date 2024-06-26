@@ -340,10 +340,10 @@ rb_roaring32_init(void)
   rb_define_method(cRoaringBitmap32, "xor!", rb_roaring32_xor_inplace, 1);
   rb_define_method(cRoaringBitmap32, "andnot!", rb_roaring32_andnot_inplace, 1);
 
-  rb_define_method(cRoaringBitmap32, "&", rb_roaring32_and, 1);
-  rb_define_method(cRoaringBitmap32, "|", rb_roaring32_or, 1);
-  rb_define_method(cRoaringBitmap32, "^", rb_roaring32_xor, 1);
-  rb_define_method(cRoaringBitmap32, "-", rb_roaring32_andnot, 1);
+  rb_define_method(cRoaringBitmap32, "and", rb_roaring32_and, 1);
+  rb_define_method(cRoaringBitmap32, "or", rb_roaring32_or, 1);
+  rb_define_method(cRoaringBitmap32, "xor", rb_roaring32_xor, 1);
+  rb_define_method(cRoaringBitmap32, "andnot", rb_roaring32_andnot, 1);
 
   rb_define_method(cRoaringBitmap32, "==", rb_roaring32_eq, 1);
   rb_define_method(cRoaringBitmap32, "<", rb_roaring32_lt, 1);
