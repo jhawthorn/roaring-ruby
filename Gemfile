@@ -13,3 +13,4 @@ gem "debug"
 gem "minitest", "~> 5.0"
 
 gem "yard"
+gem "benchmark-ips"

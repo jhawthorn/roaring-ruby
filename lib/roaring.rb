@@ -140,10 +140,6 @@ module Roaring
       serialize
     end
 
-    def to_a
-      map(&:itself)
-    end
-
     def to_set
       ::Set.new(to_a)
     end
