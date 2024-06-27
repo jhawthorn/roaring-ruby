@@ -89,6 +89,18 @@ module BitmapTests
     assert_equal [1, 2, 3], bitmap.to_a
   end
 
+  def test_add_range
+    bitmap = bitmap_class[1, 2]
+    bitmap.add_range(0, 1000)
+
+    assert_equal (0...1000).to_a, bitmap.to_a
+
+    bitmap = bitmap_class[1, 2]
+    bitmap.add_range_closed(0, 1000)
+
+    assert_equal (0..1000).to_a, bitmap.to_a
+  end
+
   def test_remove
     bitmap = bitmap_class[1, 2, 3, 4]
     assert_equal [1, 2, 3, 4], bitmap.to_a

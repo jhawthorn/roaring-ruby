@@ -88,6 +88,18 @@ static VALUE rb_roaring32_add_p(VALUE self, VALUE val)
     return roaring_bitmap_add_checked(data, num) ? self : Qnil;
 }
 
+static VALUE rb_roaring32_add_range(VALUE self, VALUE minv, VALUE maxv)
+{
+    roaring_bitmap_t *data = get_bitmap(self);
+
+    uint32_t min = NUM2UINT32(minv);
+    uint32_t max = NUM2UINT32(maxv);
+
+    roaring_bitmap_add_range(data, min, max);
+
+    return self;
+}
+
 // Removes an element from the bitmap
 static VALUE rb_roaring32_remove(VALUE self, VALUE val)
 {
@@ -383,6 +395,7 @@ rb_roaring32_init(void)
   rb_define_method(cRoaringBitmap32, "cardinality", rb_roaring32_cardinality, 0);
   rb_define_method(cRoaringBitmap32, "add", rb_roaring32_add, 1);
   rb_define_method(cRoaringBitmap32, "add?", rb_roaring32_add_p, 1);
+  rb_define_method(cRoaringBitmap32, "add_range", rb_roaring32_add_range, 2);
   rb_define_method(cRoaringBitmap32, "remove", rb_roaring32_remove, 1);
   rb_define_method(cRoaringBitmap32, "remove?", rb_roaring32_remove_p, 1);
   rb_define_method(cRoaringBitmap32, "include?", rb_roaring32_include_p, 1);
