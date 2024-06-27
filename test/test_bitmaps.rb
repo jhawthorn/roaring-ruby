@@ -378,6 +378,14 @@ module BitmapTests
     bitmap = bitmap_class[0...1000]
     assert_equal "#<#{bitmap_class} (1000 values)>", bitmap.inspect
   end
+
+  def test_hash
+    bitmap1 = bitmap_class[1, 2, 3, 4]
+    bitmap2 = bitmap_class[1, 2, 3, 4]
+
+    assert_equal bitmap1.hash, bitmap2.hash
+  end
+
 end
 
 class Bitmap32Test < Minitest::Test
