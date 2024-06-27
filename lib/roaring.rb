@@ -141,7 +141,7 @@ module Roaring
     end
 
     def to_set
-      ::Set.new(to_a)
+      ::Set.new(self)
     end
 
     # @example Small bitmap
