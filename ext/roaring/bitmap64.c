@@ -86,14 +86,14 @@ static VALUE rb_roaring64_add_p(VALUE self, VALUE val)
     return roaring64_bitmap_add_checked(data, num) ? self : Qnil;
 }
 
-static VALUE rb_roaring64_add_range(VALUE self, VALUE minv, VALUE maxv)
+static VALUE rb_roaring64_add_range_closed(VALUE self, VALUE minv, VALUE maxv)
 {
     roaring64_bitmap_t *data = get_bitmap(self);
 
     uint64_t min = NUM2UINT64(minv);
     uint64_t max = NUM2UINT64(maxv);
 
-    roaring64_bitmap_add_range(data, min, max);
+    roaring64_bitmap_add_range_closed(data, min, max);
 
     return self;
 }
@@ -345,7 +345,7 @@ rb_roaring64_init(void)
   rb_define_method(cRoaringBitmap64, "cardinality", rb_roaring64_cardinality, 0);
   rb_define_method(cRoaringBitmap64, "add", rb_roaring64_add, 1);
   rb_define_method(cRoaringBitmap64, "add?", rb_roaring64_add_p, 1);
-  rb_define_method(cRoaringBitmap64, "add_range", rb_roaring64_add_range, 2);
+  rb_define_method(cRoaringBitmap64, "add_range_closed", rb_roaring64_add_range_closed, 2);
   rb_define_method(cRoaringBitmap64, "<<", rb_roaring64_add, 1);
   rb_define_method(cRoaringBitmap64, "remove", rb_roaring64_remove, 1);
   rb_define_method(cRoaringBitmap64, "remove?", rb_roaring64_remove_p, 1);

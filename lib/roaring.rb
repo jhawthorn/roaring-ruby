@@ -91,6 +91,12 @@ module Roaring
 
       if enum.instance_of?(self.class)
         replace(enum)
+      elsif Range === enum
+        if enum.exclude_end?
+          add_range(enum.begin, enum.end)
+        else
+          add_range_closed(enum.begin, enum.end)
+        end
       else
         enum.each { |x| self << x }
       end
@@ -119,8 +125,9 @@ module Roaring
     alias_method :>=, :superset?
     alias_method :>, :proper_superset?
 
-    def add_range_closed(min, max)
-      add_range(min, max + 1)
+    def add_range(min, max)
+      return if max <= min
+      add_range_closed(min, max - 1)
     end
 
     # @return [Integer] Returns 0 if the bitmaps are equal, -1 / +1 if the set is a subset / superset of the given set, or nil if they both have unique elements.

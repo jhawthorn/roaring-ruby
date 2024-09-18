@@ -92,13 +92,20 @@ module BitmapTests
   def test_add_range
     bitmap = bitmap_class[1, 2]
     bitmap.add_range(0, 1000)
-
     assert_equal (0...1000).to_a, bitmap.to_a
 
     bitmap = bitmap_class[1, 2]
     bitmap.add_range_closed(0, 1000)
-
     assert_equal (0..1000).to_a, bitmap.to_a
+
+    bitmap = bitmap_class.new
+    bitmap.add_range(0, 2**32)
+    assert_equal 2**32, bitmap.cardinality
+
+    bitmap = bitmap_class.new
+    assert_raises RangeError do
+      bitmap.add_range_closed(bitmap_class::MAX - 1000, bitmap_class::MAX + 1)
+    end
   end
 
   def test_remove
