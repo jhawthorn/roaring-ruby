@@ -23,6 +23,7 @@ Rake::ExtensionTask.new("roaring") do |ext|
   ext.lib_dir = "lib/roaring"
 end
 
+desc "Update vendored CRoaring library"
 task :update_roaring do
   rm_rf "tmp/CRoaring"
   sh "git clone --depth=1 https://github.com/RoaringBitmap/CRoaring tmp/CRoaring"
