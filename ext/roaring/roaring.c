@@ -1,5 +1,5 @@
 // !!! DO NOT EDIT - THIS IS AN AUTO-GENERATED FILE !!!
-// Created by amalgamation.sh on 2024-06-24T08:34:40Z
+// Created by amalgamation.sh on 2024-09-18T08:02:13Z
 
 /*
  * The CRoaring project is under a dual license (Apache/MIT).
@@ -10793,8 +10793,11 @@ bool art_iterator_lower_bound(art_iterator_t *iterator,
         // a valid key. Start from the root.
         iterator->frame = 0;
         iterator->depth = 0;
-        return art_node_iterator_lower_bound(art_iterator_node(iterator),
-                                             iterator, key);
+        art_node_t *root = art_iterator_node(iterator);
+        if (root == NULL) {
+            return false;
+        }
+        return art_node_iterator_lower_bound(root, iterator, key);
     }
     int compare_result =
         art_compare_prefix(iterator->key, 0, key, 0, ART_KEY_BYTES);
@@ -12092,16 +12095,13 @@ size_t bitset_extract_setbits_avx512(const uint64_t *words, size_t length,
     for (; (i < length) && (out < safeout); ++i) {
         uint64_t w = words[i];
         while ((w != 0) && (out < safeout)) {
-            uint64_t t =
-                w & (~w + 1);  // on x64, should compile to BLSI (careful: the
-                               // Intel compiler seems to fail)
             int r =
                 roaring_trailing_zeroes(w);  // on x64, should compile to TZCNT
             uint32_t val = r + base;
             memcpy(out, &val,
                    sizeof(uint32_t));  // should be compiled as a MOV on x64
             out++;
-            w ^= t;
+            w &= (w - 1);
         }
         base += 64;
     }
@@ -12146,15 +12146,12 @@ size_t bitset_extract_setbits_avx512_uint16(const uint64_t *array,
     for (; (i < length) && (out < safeout); ++i) {
         uint64_t w = array[i];
         while ((w != 0) && (out < safeout)) {
-            uint64_t t =
-                w & (~w + 1);  // on x64, should compile to BLSI (careful: the
-                               // Intel compiler seems to fail)
             int r =
                 roaring_trailing_zeroes(w);  // on x64, should compile to TZCNT
             uint32_t val = r + base;
             memcpy(out, &val, sizeof(uint16_t));
             out++;
-            w ^= t;
+            w &= (w - 1);
         }
         base += 64;
     }
@@ -12204,16 +12201,13 @@ size_t bitset_extract_setbits_avx2(const uint64_t *words, size_t length,
     for (; (i < length) && (out < safeout); ++i) {
         uint64_t w = words[i];
         while ((w != 0) && (out < safeout)) {
-            uint64_t t =
-                w & (~w + 1);  // on x64, should compile to BLSI (careful: the
-                               // Intel compiler seems to fail)
             int r =
                 roaring_trailing_zeroes(w);  // on x64, should compile to TZCNT
             uint32_t val = r + base;
             memcpy(out, &val,
                    sizeof(uint32_t));  // should be compiled as a MOV on x64
             out++;
-            w ^= t;
+            w &= (w - 1);
         }
         base += 64;
     }
@@ -12228,16 +12222,13 @@ size_t bitset_extract_setbits(const uint64_t *words, size_t length,
     for (size_t i = 0; i < length; ++i) {
         uint64_t w = words[i];
         while (w != 0) {
-            uint64_t t =
-                w & (~w + 1);  // on x64, should compile to BLSI (careful: the
-                               // Intel compiler seems to fail)
             int r =
                 roaring_trailing_zeroes(w);  // on x64, should compile to TZCNT
             uint32_t val = r + base;
             memcpy(out + outpos, &val,
                    sizeof(uint32_t));  // should be compiled as a MOV on x64
             outpos++;
-            w ^= t;
+            w &= (w - 1);
         }
         base += 64;
     }
@@ -12251,10 +12242,9 @@ size_t bitset_extract_intersection_setbits_uint16(
     for (size_t i = 0; i < length; ++i) {
         uint64_t w = words1[i] & words2[i];
         while (w != 0) {
-            uint64_t t = w & (~w + 1);
             int r = roaring_trailing_zeroes(w);
             out[outpos++] = (uint16_t)(r + base);
-            w ^= t;
+            w &= (w - 1);
         }
         base += 64;
     }
@@ -12315,11 +12305,10 @@ size_t bitset_extract_setbits_sse_uint16(const uint64_t *words, size_t length,
     for (; (i < length) && (out < safeout); ++i) {
         uint64_t w = words[i];
         while ((w != 0) && (out < safeout)) {
-            uint64_t t = w & (~w + 1);
             int r = roaring_trailing_zeroes(w);
             *out = (uint16_t)(r + base);
             out++;
-            w ^= t;
+            w &= (w - 1);
         }
         base += 64;
     }
@@ -12343,10 +12332,9 @@ size_t bitset_extract_setbits_uint16(const uint64_t *words, size_t length,
     for (size_t i = 0; i < length; ++i) {
         uint64_t w = words[i];
         while (w != 0) {
-            uint64_t t = w & (~w + 1);
             int r = roaring_trailing_zeroes(w);
             out[outpos++] = (uint16_t)(r + base);
-            w ^= t;
+            w &= (w - 1);
         }
         base += 64;
     }
@@ -12637,7 +12625,8 @@ void bitset_flip_list(uint64_t *words, const uint16_t *list, uint64_t length) {
 #endif
 #if defined(__GNUC__) && !defined(__clang__)
 #pragma GCC diagnostic pop
-#endif/* end file src/bitset_util.c */
+#endif
+/* end file src/bitset_util.c */
 /* begin file src/containers/array.c */
 /*
  * array.c
@@ -12784,11 +12773,8 @@ int array_container_shrink_to_fit(array_container_t *src) {
 
 /* Free memory. */
 void array_container_free(array_container_t *arr) {
-    if (arr->array !=
-        NULL) {  // Jon Strabala reports that some tools complain otherwise
-        roaring_free(arr->array);
-        arr->array = NULL;  // pedantic
-    }
+    if (arr == NULL) return;
+    roaring_free(arr->array);
     roaring_free(arr);
 }
 
@@ -12816,10 +12802,7 @@ void array_container_grow(array_container_t *container, int32_t min,
             (uint16_t *)roaring_realloc(array, new_capacity * sizeof(uint16_t));
         if (container->array == NULL) roaring_free(array);
     } else {
-        // Jon Strabala reports that some tools complain otherwise
-        if (array != NULL) {
-            roaring_free(array);
-        }
+        roaring_free(array);
         container->array =
             (uint16_t *)roaring_malloc(new_capacity * sizeof(uint16_t));
     }
@@ -13340,11 +13323,8 @@ void bitset_container_add_from_range(bitset_container_t *bitset, uint32_t min,
 
 /* Free memory. */
 void bitset_container_free(bitset_container_t *bitset) {
-    if (bitset->words !=
-        NULL) {  // Jon Strabala reports that some tools complain otherwise
-        roaring_aligned_free(bitset->words);
-        bitset->words = NULL;  // pedantic
-    }
+    if (bitset == NULL) return;
+    roaring_aligned_free(bitset->words);
     roaring_free(bitset);
 }
 
@@ -17976,11 +17956,8 @@ void run_container_offset(const run_container_t *c, container_t **loc,
 
 /* Free memory. */
 void run_container_free(run_container_t *run) {
-    if (run->runs !=
-        NULL) {  // Jon Strabala reports that some tools complain otherwise
-        roaring_free(run->runs);
-        run->runs = NULL;  // pedantic
-    }
+    if (run == NULL) return;
+    roaring_free(run->runs);
     roaring_free(run);
 }
 
@@ -17998,10 +17975,7 @@ void run_container_grow(run_container_t *run, int32_t min, bool copy) {
                                                run->capacity * sizeof(rle16_t));
         if (run->runs == NULL) roaring_free(oldruns);
     } else {
-        // Jon Strabala reports that some tools complain otherwise
-        if (run->runs != NULL) {
-            roaring_free(run->runs);
-        }
+        roaring_free(run->runs);
         run->runs = (rle16_t *)roaring_malloc(run->capacity * sizeof(rle16_t));
     }
     // We may have run->runs == NULL.
@@ -18423,24 +18397,6 @@ void run_container_andnot(const run_container_t *src_1,
     }
 }
 
-ALLOW_UNALIGNED
-int run_container_to_uint32_array(void *vout, const run_container_t *cont,
-                                  uint32_t base) {
-    int outpos = 0;
-    uint32_t *out = (uint32_t *)vout;
-    for (int i = 0; i < cont->n_runs; ++i) {
-        uint32_t run_start = base + cont->runs[i].value;
-        uint16_t le = cont->runs[i].length;
-        for (int j = 0; j <= le; ++j) {
-            uint32_t val = run_start + j;
-            memcpy(out + outpos, &val,
-                   sizeof(uint32_t));  // should be compiled as a MOV on x64
-            outpos++;
-        }
-    }
-    return outpos;
-}
-
 /*
  * Print this container using printf (useful for debugging).
  */
@@ -18813,6 +18769,47 @@ static inline int _avx2_run_container_cardinality(const run_container_t *run) {
     return sum;
 }
 
+ALLOW_UNALIGNED
+int _avx2_run_container_to_uint32_array(void *vout, const run_container_t *cont,
+                                        uint32_t base) {
+    int outpos = 0;
+    uint32_t *out = (uint32_t *)vout;
+
+    for (int i = 0; i < cont->n_runs; ++i) {
+        uint32_t run_start = base + cont->runs[i].value;
+        uint16_t le = cont->runs[i].length;
+        if (le < 8) {
+            for (int j = 0; j <= le; ++j) {
+                uint32_t val = run_start + j;
+                memcpy(out + outpos, &val,
+                       sizeof(uint32_t));  // should be compiled as a MOV on x64
+                outpos++;
+            }
+        } else {
+            int j = 0;
+            __m256i run_start_v = _mm256_set1_epi32(run_start);
+            // [8,8,8,8....]
+            __m256i inc = _mm256_set1_epi32(8);
+            // used for generate sequence:
+            // [0, 1, 2, 3...], [8, 9, 10,...]
+            __m256i delta = _mm256_setr_epi32(0, 1, 2, 3, 4, 5, 6, 7);
+            for (j = 0; j + 8 <= le; j += 8) {
+                __m256i val_v = _mm256_add_epi32(run_start_v, delta);
+                _mm256_storeu_si256((__m256i *)(out + outpos), val_v);
+                delta = _mm256_add_epi32(inc, delta);
+                outpos += 8;
+            }
+            for (; j <= le; ++j) {
+                uint32_t val = run_start + j;
+                memcpy(out + outpos, &val,
+                       sizeof(uint32_t));  // should be compiled as a MOV on x64
+                outpos++;
+            }
+        }
+    }
+    return outpos;
+}
+
 CROARING_UNTARGET_AVX2
 
 /* Get the cardinality of `run'. Requires an actual computation. */
@@ -18842,6 +18839,34 @@ int run_container_cardinality(const run_container_t *run) {
         return _scalar_run_container_cardinality(run);
     }
 }
+
+int _scalar_run_container_to_uint32_array(void *vout,
+                                          const run_container_t *cont,
+                                          uint32_t base) {
+    int outpos = 0;
+    uint32_t *out = (uint32_t *)vout;
+    for (int i = 0; i < cont->n_runs; ++i) {
+        uint32_t run_start = base + cont->runs[i].value;
+        uint16_t le = cont->runs[i].length;
+        for (int j = 0; j <= le; ++j) {
+            uint32_t val = run_start + j;
+            memcpy(out + outpos, &val,
+                   sizeof(uint32_t));  // should be compiled as a MOV on x64
+            outpos++;
+        }
+    }
+    return outpos;
+}
+
+int run_container_to_uint32_array(void *vout, const run_container_t *cont,
+                                  uint32_t base) {
+    if (croaring_hardware_support() & ROARING_SUPPORTS_AVX2) {
+        return _avx2_run_container_to_uint32_array(vout, cont, base);
+    } else {
+        return _scalar_run_container_to_uint32_array(vout, cont, base);
+    }
+}
+
 #else
 
 /* Get the cardinality of `run'. Requires an actual computation. */
@@ -18858,6 +18883,25 @@ int run_container_cardinality(const run_container_t *run) {
 
     return sum;
 }
+
+ALLOW_UNALIGNED
+int run_container_to_uint32_array(void *vout, const run_container_t *cont,
+                                  uint32_t base) {
+    int outpos = 0;
+    uint32_t *out = (uint32_t *)vout;
+    for (int i = 0; i < cont->n_runs; ++i) {
+        uint32_t run_start = base + cont->runs[i].value;
+        uint16_t le = cont->runs[i].length;
+        for (int j = 0; j <= le; ++j) {
+            uint32_t val = run_start + j;
+            memcpy(out + outpos, &val,
+                   sizeof(uint32_t));  // should be compiled as a MOV on x64
+            outpos++;
+        }
+    }
+    return outpos;
+}
+
 #endif
 
 #ifdef __cplusplus
@@ -18919,15 +18963,15 @@ POSSIBILITY OF SUCH DAMAGE.
 #include <stdint.h>
 #include <stdlib.h>
 
-// Binaries produced by Visual Studio with solely AVX2 routines
+// Binaries produced by Visual Studio 19.38 with solely AVX2 routines
 // can compile to AVX-512 thus causing crashes on non-AVX-512 systems.
 // This appears to affect VS 17.8 and 17.9. We disable AVX-512 and AVX2
 // on these systems. It seems that ClangCL is not affected.
 // https://github.com/RoaringBitmap/CRoaring/pull/603
 #ifndef __clang__
-#if _MSC_VER >= 1938
+#if _MSC_VER == 1938
 #define ROARING_DISABLE_AVX 1
-#endif  // _MSC_VER >= 1938
+#endif  // _MSC_VER == 1938
 #endif  // __clang__
 
 // We need portability.h to be included first, see
@@ -22810,6 +22854,43 @@ roaring64_bitmap_t *roaring64_bitmap_copy(const roaring64_bitmap_t *r) {
     return result;
 }
 
+/**
+ * Steal the containers from a 32-bit bitmap and insert them into a 64-bit
+ * bitmap (with an offset)
+ *
+ * After calling this function, the original bitmap will be empty, and the
+ * returned bitmap will contain all the values from the original bitmap.
+ */
+static void move_from_roaring32_offset(roaring64_bitmap_t *dst,
+                                       roaring_bitmap_t *src,
+                                       uint32_t high_bits) {
+    uint64_t key_base = ((uint64_t)high_bits) << 32;
+    uint32_t r32_size = ra_get_size(&src->high_low_container);
+    for (uint32_t i = 0; i < r32_size; ++i) {
+        uint16_t key = ra_get_key_at_index(&src->high_low_container, i);
+        uint8_t typecode;
+        container_t *container = ra_get_container_at_index(
+            &src->high_low_container, (uint16_t)i, &typecode);
+
+        uint8_t high48[ART_KEY_BYTES];
+        uint64_t high48_bits = key_base | ((uint64_t)key << 16);
+        split_key(high48_bits, high48);
+        leaf_t *leaf = create_leaf(container, typecode);
+        art_insert(&dst->art, high48, (art_val_t *)leaf);
+    }
+    // We stole all the containers, so leave behind a size of zero
+    src->high_low_container.size = 0;
+}
+
+roaring64_bitmap_t *roaring64_bitmap_move_from_roaring32(
+    roaring_bitmap_t *bitmap32) {
+    roaring64_bitmap_t *result = roaring64_bitmap_create();
+
+    move_from_roaring32_offset(result, bitmap32, 0);
+
+    return result;
+}
+
 roaring64_bitmap_t *roaring64_bitmap_from_range(uint64_t min, uint64_t max,
                                                 uint64_t step) {
     if (step == 0 || max <= min) {
@@ -24579,22 +24660,8 @@ roaring64_bitmap_t *roaring64_bitmap_portable_deserialize_safe(
         read_bytes += bitmap32_size;
 
         // Insert all containers of the 32-bit bitmap into the 64-bit bitmap.
-        uint32_t r32_size = ra_get_size(&bitmap32->high_low_container);
-        for (size_t i = 0; i < r32_size; ++i) {
-            uint16_t key16 =
-                ra_get_key_at_index(&bitmap32->high_low_container, (uint16_t)i);
-            uint8_t typecode;
-            container_t *container = ra_get_container_at_index(
-                &bitmap32->high_low_container, (uint16_t)i, &typecode);
-
-            uint64_t high48_bits =
-                (((uint64_t)high32) << 32) | (((uint64_t)key16) << 16);
-            uint8_t high48[ART_KEY_BYTES];
-            split_key(high48_bits, high48);
-            leaf_t *leaf = create_leaf(container, typecode);
-            art_insert(&r->art, high48, (art_val_t *)leaf);
-        }
-        roaring_bitmap_free_without_containers(bitmap32);
+        move_from_roaring32_offset(r, bitmap32, high32);
+        roaring_bitmap_free(bitmap32);
     }
     return r;
 }
