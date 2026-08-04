@@ -338,6 +338,26 @@ module BitmapTests
     assert_equal original, bitmap
   end
 
+  def test_deserialize_invalid_string
+    assert_raises(ArgumentError) { bitmap_class.deserialize("") }
+    assert_raises(ArgumentError) { bitmap_class.deserialize("not a roaring payload".b) }
+  end
+
+  def test_deserialize_truncated_string
+    dump = bitmap_class[1, 2, 3, 4].serialize
+
+    (0...dump.bytesize).each do |length|
+      assert_raises(ArgumentError, "expected a #{length} byte prefix to be rejected") do
+        bitmap_class.deserialize(dump.byteslice(0, length))
+      end
+    end
+  end
+
+  def test_deserialize_non_string
+    assert_raises(TypeError) { bitmap_class.deserialize(123) }
+    assert_raises(TypeError) { bitmap_class.deserialize(nil) }
+  end
+
   def test_marshal
     original = bitmap_class[1, 2, 3, 4]
 

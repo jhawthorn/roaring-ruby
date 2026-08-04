@@ -208,7 +208,14 @@ static VALUE rb_roaring64_serialize(VALUE self)
 
 static VALUE rb_roaring64_deserialize(VALUE self, VALUE str)
 {
+    StringValue(str);
+
     roaring64_bitmap_t *bitmap = roaring64_bitmap_portable_deserialize_safe(RSTRING_PTR(str), RSTRING_LEN(str));
+    RB_GC_GUARD(str);
+
+    if (!bitmap) {
+        rb_raise(rb_eArgError, "invalid Roaring::Bitmap64 serialization");
+    }
 
     return TypedData_Wrap_Struct(cRoaringBitmap64, &roaring64_type, bitmap);
 }

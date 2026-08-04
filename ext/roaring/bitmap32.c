@@ -229,10 +229,19 @@ static VALUE rb_roaring32_serialize(VALUE self)
 }
 
 // Loads a previously serialized bitmap
+// @param str [String] a string previously returned from {#serialize}
+// @raise [ArgumentError] if the string isn't a valid serialized bitmap
 // @return [Bitmap32]
 static VALUE rb_roaring32_deserialize(VALUE self, VALUE str)
 {
+    StringValue(str);
+
     roaring_bitmap_t *bitmap = roaring_bitmap_portable_deserialize_safe(RSTRING_PTR(str), RSTRING_LEN(str));
+    RB_GC_GUARD(str);
+
+    if (!bitmap) {
+        rb_raise(rb_eArgError, "invalid Roaring::Bitmap32 serialization");
+    }
 
     return TypedData_Wrap_Struct(cRoaringBitmap32, &roaring_type, bitmap);
 }
