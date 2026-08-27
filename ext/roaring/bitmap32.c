@@ -309,6 +309,15 @@ static VALUE rb_roaring32_binary_op_bool(VALUE self, VALUE other, binary_func_bo
     return RBOOL(result);
 }
 
+typedef uint64_t binary_func_cardinality(const roaring_bitmap_t *, const roaring_bitmap_t *);
+static VALUE rb_roaring32_binary_op_cardinality(VALUE self, VALUE other, binary_func_cardinality func) {
+    roaring_bitmap_t *self_data = get_bitmap(self);
+    roaring_bitmap_t *other_data = get_bitmap(other);
+
+    uint64_t result = func(self_data, other_data);
+    return ULONG2NUM(result);
+}
+
 // Inplace version of {and}
 // @return [self] the modified Bitmap
 static VALUE rb_roaring32_and_inplace(VALUE self, VALUE other)
@@ -356,6 +365,30 @@ static VALUE rb_roaring32_or(VALUE self, VALUE other)
 static VALUE rb_roaring32_xor(VALUE self, VALUE other)
 {
     return rb_roaring32_binary_op(self, other, roaring_bitmap_xor);
+}
+
+// Computes the cardinality of the intersection between two bitmaps without
+// materializing the result
+// @return [Integer] the number of elements in both `self` and `other`
+static VALUE rb_roaring32_and_cardinality(VALUE self, VALUE other)
+{
+    return rb_roaring32_binary_op_cardinality(self, other, roaring_bitmap_and_cardinality);
+}
+
+// Computes the cardinality of the union between two bitmaps without
+// materializing the result
+// @return [Integer] the number of elements in either `self` or `other`
+static VALUE rb_roaring32_or_cardinality(VALUE self, VALUE other)
+{
+    return rb_roaring32_binary_op_cardinality(self, other, roaring_bitmap_or_cardinality);
+}
+
+// Computes the cardinality of the exclusive or between two bitmaps without
+// materializing the result
+// @return [Integer] the number of elements in one of `self` or `other`, but not both
+static VALUE rb_roaring32_xor_cardinality(VALUE self, VALUE other)
+{
+    return rb_roaring32_binary_op_cardinality(self, other, roaring_bitmap_xor_cardinality);
 }
 
 // Computes the difference between two bitmaps
@@ -420,6 +453,10 @@ rb_roaring32_init(void)
   rb_define_method(cRoaringBitmap32, "or", rb_roaring32_or, 1);
   rb_define_method(cRoaringBitmap32, "xor", rb_roaring32_xor, 1);
   rb_define_method(cRoaringBitmap32, "andnot", rb_roaring32_andnot, 1);
+
+  rb_define_method(cRoaringBitmap32, "and_cardinality", rb_roaring32_and_cardinality, 1);
+  rb_define_method(cRoaringBitmap32, "or_cardinality", rb_roaring32_or_cardinality, 1);
+  rb_define_method(cRoaringBitmap32, "xor_cardinality", rb_roaring32_xor_cardinality, 1);
 
   rb_define_method(cRoaringBitmap32, "==", rb_roaring32_eq, 1);
   rb_define_method(cRoaringBitmap32, "<", rb_roaring32_lt, 1);

@@ -281,6 +281,15 @@ static VALUE rb_roaring64_binary_op_bool(VALUE self, VALUE other, binary_func_bo
     return RBOOL(result);
 }
 
+typedef uint64_t binary_func_cardinality(const roaring64_bitmap_t *, const roaring64_bitmap_t *);
+static VALUE rb_roaring64_binary_op_cardinality(VALUE self, VALUE other, binary_func_cardinality func) {
+    roaring64_bitmap_t *self_data = get_bitmap(self);
+    roaring64_bitmap_t *other_data = get_bitmap(other);
+
+    uint64_t result = func(self_data, other_data);
+    return ULONG2NUM(result);
+}
+
 static VALUE rb_roaring64_and_inplace(VALUE self, VALUE other)
 {
     return rb_roaring64_binary_op_inplace(self, other, roaring64_bitmap_and_inplace);
@@ -314,6 +323,21 @@ static VALUE rb_roaring64_or(VALUE self, VALUE other)
 static VALUE rb_roaring64_xor(VALUE self, VALUE other)
 {
     return rb_roaring64_binary_op(self, other, roaring64_bitmap_xor);
+}
+
+static VALUE rb_roaring64_and_cardinality(VALUE self, VALUE other)
+{
+    return rb_roaring64_binary_op_cardinality(self, other, roaring64_bitmap_and_cardinality);
+}
+
+static VALUE rb_roaring64_or_cardinality(VALUE self, VALUE other)
+{
+    return rb_roaring64_binary_op_cardinality(self, other, roaring64_bitmap_or_cardinality);
+}
+
+static VALUE rb_roaring64_xor_cardinality(VALUE self, VALUE other)
+{
+    return rb_roaring64_binary_op_cardinality(self, other, roaring64_bitmap_xor_cardinality);
 }
 
 static VALUE rb_roaring64_andnot(VALUE self, VALUE other)
@@ -369,6 +393,10 @@ rb_roaring64_init(void)
   rb_define_method(cRoaringBitmap64, "or", rb_roaring64_or, 1);
   rb_define_method(cRoaringBitmap64, "xor", rb_roaring64_xor, 1);
   rb_define_method(cRoaringBitmap64, "andnot", rb_roaring64_andnot, 1);
+
+  rb_define_method(cRoaringBitmap64, "and_cardinality", rb_roaring64_and_cardinality, 1);
+  rb_define_method(cRoaringBitmap64, "or_cardinality", rb_roaring64_or_cardinality, 1);
+  rb_define_method(cRoaringBitmap64, "xor_cardinality", rb_roaring64_xor_cardinality, 1);
 
   rb_define_method(cRoaringBitmap64, "==", rb_roaring64_eq, 1);
   rb_define_method(cRoaringBitmap64, "<", rb_roaring64_lt, 1);
