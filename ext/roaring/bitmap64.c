@@ -287,7 +287,7 @@ static VALUE rb_roaring64_binary_op_cardinality(VALUE self, VALUE other, binary_
     roaring64_bitmap_t *other_data = get_bitmap(other);
 
     uint64_t result = func(self_data, other_data);
-    return ULONG2NUM(result);
+    return ULL2NUM(result);
 }
 
 static VALUE rb_roaring64_and_inplace(VALUE self, VALUE other)
