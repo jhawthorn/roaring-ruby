@@ -66,7 +66,7 @@ static VALUE rb_roaring64_cardinality(VALUE self)
 {
     roaring64_bitmap_t *data = get_bitmap(self);
     uint64_t cardinality = roaring64_bitmap_get_cardinality(data);
-    return ULONG2NUM(cardinality);
+    return ULL2NUM(cardinality);
 }
 
 static VALUE rb_roaring64_add(VALUE self, VALUE val)
