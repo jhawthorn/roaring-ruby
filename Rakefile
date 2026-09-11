@@ -23,10 +23,12 @@ Rake::ExtensionTask.new("roaring") do |ext|
   ext.lib_dir = "lib/roaring"
 end
 
-desc "Update vendored CRoaring library"
-task :update_roaring do
+desc "Update vendored CRoaring library (optionally to a tag or branch)"
+task :update_roaring, [:ref] do |_t, args|
+  ref = args[:ref]
   rm_rf "tmp/CRoaring"
-  sh "git clone --depth=1 https://github.com/RoaringBitmap/CRoaring tmp/CRoaring"
+  branch = ref ? "--branch #{ref}" : ""
+  sh "git clone --depth=1 #{branch} https://github.com/RoaringBitmap/CRoaring tmp/CRoaring"
   sh "cd tmp/CRoaring && sh amalgamation.sh"
   cp "tmp/CRoaring/roaring.c", "ext/roaring/roaring.c"
   cp "tmp/CRoaring/roaring.h", "ext/roaring/roaring.h"
