@@ -429,7 +429,7 @@ static VALUE rb_roaring32_intersect_p(VALUE self, VALUE other)
 void
 rb_roaring32_init(void)
 {
-  cRoaringBitmap32 = rb_define_class_under(rb_mRoaring, "Bitmap32", rb_cObject);
+  cRoaringBitmap32 = rb_define_class_under(rb_mRoaring, "Bitmap32", rb_cRoaringBitmap);
   rb_define_alloc_func(cRoaringBitmap32, rb_roaring32_alloc);
   rb_define_method(cRoaringBitmap32, "replace", rb_roaring32_replace, 1);
   rb_define_method(cRoaringBitmap32, "empty?", rb_roaring32_empty_p, 0);

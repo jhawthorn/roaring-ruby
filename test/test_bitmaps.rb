@@ -446,6 +446,17 @@ module BitmapTests
     assert_equal bitmap1.hash, bitmap2.hash
   end
 
+  def test_inherits_from_bitmap
+    assert_equal Roaring::Bitmap, bitmap_class.superclass
+    assert_kind_of Roaring::Bitmap, bitmap_class.new
+  end
+
+  # Bitmap used to be a mixin named BitmapCommon, which is kept (empty) so that
+  # existing is_a? checks keep working.
+  def test_is_kind_of_bitmap_common
+    assert_kind_of Roaring::BitmapCommon, bitmap_class.new
+  end
+
 end
 
 class Bitmap32Test < Minitest::Test

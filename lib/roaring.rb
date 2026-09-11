@@ -7,81 +7,87 @@ require "set"
 module Roaring
   class Error < StandardError; end
 
-  module BitmapCommon
-    module ClassMethods
-      # @private
-      # @!macro [attach] property
-      #   @!parse alias_method :<<, :add
-      #
-      #   @!parse alias_method :size, :cardinality
-      #   @!parse alias_method :length, :cardinality
-      #   @!parse alias_method :count, :cardinality
-      #
-      #   @!parse alias_method :&, :and
-      #   @!parse alias_method :|, :or
-      #   @!parse alias_method :^, :xor
-      #   @!parse alias_method :-, :andnot
-      #   @!parse alias_method :+, :or
-      #   @!parse alias_method :union, :or
-      #   @!parse alias_method :intersection, :and
-      #   @!parse alias_method :difference, :andnot
-      #
-      #   @!parse alias_method :delete, :remove
-      #   @!parse alias_method :delete?, :remove?
-      #
-      #   @!parse alias_method :first, :min
-      #   @!parse alias_method :last, :max
-      #
-      #   @!parse alias_method :eql?, :==
-      #
-      #   @!parse alias_method :===, :include?
-      #
-      #   @!parse alias_method :subset?, :<=
-      #   @!parse alias_method :proper_subset?, :<
-      def define_roaring_aliases!
-        alias_method :<<, :add
+  # @private
+  # Kept so existing is_a?(Roaring::BitmapCommon) checks keep working.
+  module BitmapCommon; end
 
-        alias_method :size, :cardinality
-        alias_method :length, :cardinality
-        alias_method :count, :cardinality
+  # Abstract base class of {Bitmap32} and {Bitmap64}, holding the behaviour
+  # common to both widths. Not instantiable: the two widths are distinct
+  # serialization formats, so a concrete width must always be chosen.
+  class Bitmap
+    include BitmapCommon
+    # @private
+    # @!macro [attach] property
+    #   @!parse alias_method :<<, :add
+    #
+    #   @!parse alias_method :size, :cardinality
+    #   @!parse alias_method :length, :cardinality
+    #   @!parse alias_method :count, :cardinality
+    #
+    #   @!parse alias_method :&, :and
+    #   @!parse alias_method :|, :or
+    #   @!parse alias_method :^, :xor
+    #   @!parse alias_method :-, :andnot
+    #   @!parse alias_method :+, :or
+    #   @!parse alias_method :union, :or
+    #   @!parse alias_method :intersection, :and
+    #   @!parse alias_method :difference, :andnot
+    #
+    #   @!parse alias_method :delete, :remove
+    #   @!parse alias_method :delete?, :remove?
+    #
+    #   @!parse alias_method :first, :min
+    #   @!parse alias_method :last, :max
+    #
+    #   @!parse alias_method :eql?, :==
+    #
+    #   @!parse alias_method :===, :include?
+    #
+    #   @!parse alias_method :subset?, :<=
+    #   @!parse alias_method :proper_subset?, :<
+    def self.define_roaring_aliases!
+      alias_method :<<, :add
 
-        alias_method :&, :and
-        alias_method :|, :or
-        alias_method :^, :xor
-        alias_method :-, :andnot
-        alias_method :+, :or
-        alias_method :union, :or
-        alias_method :intersection, :and
-        alias_method :difference, :andnot
+      alias_method :size, :cardinality
+      alias_method :length, :cardinality
+      alias_method :count, :cardinality
 
-        alias_method :delete, :remove
-        alias_method :delete?, :remove?
+      alias_method :&, :and
+      alias_method :|, :or
+      alias_method :^, :xor
+      alias_method :-, :andnot
+      alias_method :+, :or
+      alias_method :union, :or
+      alias_method :intersection, :and
+      alias_method :difference, :andnot
 
-        alias_method :first, :min
-        alias_method :last, :max
+      alias_method :delete, :remove
+      alias_method :delete?, :remove?
 
-        alias_method :eql?, :==
+      alias_method :first, :min
+      alias_method :last, :max
 
-        alias_method :===, :include?
+      alias_method :eql?, :==
 
-        alias_method :subset?, :<=
-        alias_method :proper_subset?, :<
+      alias_method :===, :include?
+
+      alias_method :subset?, :<=
+      alias_method :proper_subset?, :<
+    end
+
+    # Convenience method for building a bitmap
+    def self.[](*args)
+      if args.size == 0
+        new
+      elsif args.size == 1 && !(Integer === args[0])
+        new(args[0])
+      else
+        new(args)
       end
+    end
 
-      # Convenience method for building a bitmap
-      def [](*args)
-        if args.size == 0
-          new
-        elsif args.size == 1 && !(Integer === args[0])
-          new(args[0])
-        else
-          new(args)
-        end
-      end
-
-      def _load args
-        deserialize(args)
-      end
+    def self._load args
+      deserialize(args)
     end
 
     include Enumerable
@@ -170,10 +176,7 @@ module Roaring
     end
   end
 
-  class Bitmap32
-    include BitmapCommon
-    extend BitmapCommon::ClassMethods
-
+  class Bitmap32 < Bitmap
     define_roaring_aliases!
 
     MIN = 0
@@ -181,10 +184,7 @@ module Roaring
     RANGE = MIN..MAX
   end
 
-  class Bitmap64
-    include BitmapCommon
-    extend BitmapCommon::ClassMethods
-
+  class Bitmap64 < Bitmap
     define_roaring_aliases!
 
     MIN = 0

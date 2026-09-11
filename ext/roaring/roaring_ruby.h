@@ -10,6 +10,7 @@
 #endif
 
 extern VALUE rb_mRoaring;
+extern VALUE rb_cRoaringBitmap;
 
 void rb_roaring32_init();
 void rb_roaring64_init();

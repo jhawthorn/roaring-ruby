@@ -368,7 +368,7 @@ static VALUE rb_roaring64_intersect_p(VALUE self, VALUE other)
 void
 rb_roaring64_init(void)
 {
-  cRoaringBitmap64 = rb_define_class_under(rb_mRoaring, "Bitmap64", rb_cObject);
+  cRoaringBitmap64 = rb_define_class_under(rb_mRoaring, "Bitmap64", rb_cRoaringBitmap);
   rb_define_alloc_func(cRoaringBitmap64, rb_roaring64_alloc);
   rb_define_method(cRoaringBitmap64, "replace", rb_roaring64_replace, 1);
   rb_define_method(cRoaringBitmap64, "empty?", rb_roaring64_empty_p, 0);
