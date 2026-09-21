@@ -53,11 +53,7 @@ static VALUE rb_roaring64_replace(VALUE self, VALUE other) {
     roaring64_bitmap_t *self_data = get_bitmap(self);
     roaring64_bitmap_t *other_data = get_bitmap(other);
 
-    // FIXME: Very likely a newer version of CRoaring will have
-    //roaring64_bitmap_overwrite(self_data, other_data);
-
-    roaring64_bitmap_clear(self_data);
-    roaring64_bitmap_or_inplace(self_data, other_data);
+    roaring64_bitmap_overwrite(self_data, other_data);
 
     return self;
 }
