@@ -151,10 +151,17 @@ bool rb_roaring32_each_i(uint32_t value, void *param) {
     return true;  // iterate till the end
 }
 
+static VALUE rb_roaring32_each_size(VALUE self, VALUE args, VALUE eobj)
+{
+    return rb_roaring32_cardinality(self);
+}
+
 // Iterates over every element in the bitmap
-// @return [self]
+// @return [self,Enumerator] `self`, or an Enumerator if no block is given
 static VALUE rb_roaring32_each(VALUE self)
 {
+    RETURN_SIZED_ENUMERATOR(self, 0, 0, rb_roaring32_each_size);
+
     roaring_bitmap_t *data = get_bitmap(self);
     roaring_iterate(data, rb_roaring32_each_i, NULL);
     return self;

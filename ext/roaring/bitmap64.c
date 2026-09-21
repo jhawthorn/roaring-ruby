@@ -141,8 +141,15 @@ bool rb_roaring64_each_i(uint64_t value, void *param) {
     return true;  // iterate till the end
 }
 
+static VALUE rb_roaring64_each_size(VALUE self, VALUE args, VALUE eobj)
+{
+    return rb_roaring64_cardinality(self);
+}
+
 static VALUE rb_roaring64_each(VALUE self)
 {
+    RETURN_SIZED_ENUMERATOR(self, 0, 0, rb_roaring64_each_size);
+
     roaring64_bitmap_t *data = get_bitmap(self);
     roaring64_bitmap_iterate(data, rb_roaring64_each_i, NULL);
     return self;

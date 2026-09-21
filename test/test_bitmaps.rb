@@ -177,6 +177,18 @@ module BitmapTests
     assert_equal [1, 2, 5, 7], result
   end
 
+  def test_each_without_block
+    bitmap = bitmap_class[1, 2, 5, 7]
+    enum = bitmap.each
+
+    assert_kind_of Enumerator, enum
+    assert_equal 4, enum.size
+    assert_equal 1, enum.next
+    assert_equal 2, enum.next
+    assert_equal [1, 2, 5, 7], enum.to_a
+    assert_equal [[1, 0], [2, 1], [5, 2], [7, 3]], bitmap.each.with_index.to_a
+  end
+
   def test_each_with_break
     bitmap = bitmap_class[1, 2, 3]
     result = bitmap.each do
