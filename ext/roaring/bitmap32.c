@@ -197,16 +197,39 @@ static VALUE rb_roaring32_each_ensure(VALUE self)
     return Qnil;
 }
 
-static VALUE rb_roaring32_each(VALUE self)
+static VALUE rb_roaring32_iterate(VALUE self, VALUE (*body)(VALUE))
 {
-    RETURN_SIZED_ENUMERATOR(self, 0, 0, rb_roaring32_each_size);
-
     if (RB_OBJ_FROZEN(self)) {
-        return rb_roaring32_each_call(self);
+        return body(self);
     }
 
     get_data(self)->iter_lev++;
-    return rb_ensure(rb_roaring32_each_call, self, rb_roaring32_each_ensure, self);
+    return rb_ensure(body, self, rb_roaring32_each_ensure, self);
+}
+
+static VALUE rb_roaring32_each(VALUE self)
+{
+    RETURN_SIZED_ENUMERATOR(self, 0, 0, rb_roaring32_each_size);
+    return rb_roaring32_iterate(self, rb_roaring32_each_call);
+}
+
+static VALUE rb_roaring32_reverse_each_call(VALUE self)
+{
+    roaring_uint32_iterator_t it;
+    roaring_iterator_init_last(get_bitmap(self), &it);
+    while (it.has_value) {
+        rb_yield(UINT2NUM(it.current_value));
+        roaring_uint32_iterator_previous(&it);
+    }
+    return self;
+}
+
+// Iterates over every element in the bitmap in descending order
+// @return [self,Enumerator] `self`, or an Enumerator if no block is given
+static VALUE rb_roaring32_reverse_each(VALUE self)
+{
+    RETURN_SIZED_ENUMERATOR(self, 0, 0, rb_roaring32_each_size);
+    return rb_roaring32_iterate(self, rb_roaring32_reverse_each_call);
 }
 
 static bool rb_roaring32_hash_i(uint32_t value, void *param) {
@@ -533,6 +556,7 @@ rb_roaring32_init(void)
   rb_define_method(cRoaringBitmap32, "remove?", rb_roaring32_remove_p, 1);
   rb_define_method(cRoaringBitmap32, "include?", rb_roaring32_include_p, 1);
   rb_define_method(cRoaringBitmap32, "each", rb_roaring32_each, 0);
+  rb_define_method(cRoaringBitmap32, "reverse_each", rb_roaring32_reverse_each, 0);
   rb_define_method(cRoaringBitmap32, "[]", rb_roaring32_aref, 1);
 
   rb_define_method(cRoaringBitmap32, "and!", rb_roaring32_and_inplace, 1);

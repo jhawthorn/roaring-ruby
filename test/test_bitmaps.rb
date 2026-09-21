@@ -177,6 +177,29 @@ module BitmapTests
     assert_equal [1, 2, 5, 7], result
   end
 
+  def test_reverse_each
+    bitmap = bitmap_class[1, 2, 5, 7, bitmap_class::MAX]
+    result = []
+    assert_same bitmap, bitmap.reverse_each { |x| result << x }
+    assert_equal [bitmap_class::MAX, 7, 5, 2, 1], result
+
+    assert_equal [], bitmap_class.new.reverse_each.to_a
+
+    enum = bitmap.reverse_each
+    assert_kind_of Enumerator, enum
+    assert_equal 5, enum.size
+    assert_equal bitmap_class::MAX, enum.next
+
+    bitmap = bitmap_class[0...100_000]
+    assert_equal (0...100_000).to_a.reverse, bitmap.reverse_each.to_a
+
+    assert_equal 2, bitmap_class[1, 2, 3].reverse_each { |x| break x if x.even? }
+    assert_raises(RuntimeError) { bitmap.reverse_each { bitmap.add(1) } }
+    assert_raises(ArgumentError) { bitmap.reverse_each { raise ArgumentError } }
+    bitmap.add(200_000)
+    assert_equal 100_001, bitmap.size
+  end
+
   def test_to_a
     assert_equal [], bitmap_class.new.to_a
     assert_equal [0, 5, 1000, bitmap_class::MAX], bitmap_class[bitmap_class::MAX, 1000, 5, 0].to_a

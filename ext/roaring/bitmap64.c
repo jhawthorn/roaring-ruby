@@ -180,16 +180,51 @@ static VALUE rb_roaring64_each_ensure(VALUE self)
     return Qnil;
 }
 
-static VALUE rb_roaring64_each(VALUE self)
+static VALUE rb_roaring64_iterate(VALUE self, VALUE (*body)(VALUE))
 {
-    RETURN_SIZED_ENUMERATOR(self, 0, 0, rb_roaring64_each_size);
-
     if (RB_OBJ_FROZEN(self)) {
-        return rb_roaring64_each_call(self);
+        return body(self);
     }
 
     get_data(self)->iter_lev++;
-    return rb_ensure(rb_roaring64_each_call, self, rb_roaring64_each_ensure, self);
+    return rb_ensure(body, self, rb_roaring64_each_ensure, self);
+}
+
+static VALUE rb_roaring64_each(VALUE self)
+{
+    RETURN_SIZED_ENUMERATOR(self, 0, 0, rb_roaring64_each_size);
+    return rb_roaring64_iterate(self, rb_roaring64_each_call);
+}
+
+static VALUE rb_roaring64_reverse_each_loop(VALUE arg)
+{
+    roaring64_iterator_t *it = (roaring64_iterator_t *)arg;
+    while (roaring64_iterator_has_value(it)) {
+        rb_yield(ULL2NUM(roaring64_iterator_value(it)));
+        roaring64_iterator_previous(it);
+    }
+    return Qnil;
+}
+
+static VALUE rb_roaring64_iterator_free_ensure(VALUE arg)
+{
+    roaring64_iterator_free((roaring64_iterator_t *)arg);
+    return Qnil;
+}
+
+static VALUE rb_roaring64_reverse_each_call(VALUE self)
+{
+    roaring64_iterator_t *it = roaring64_iterator_create_last(get_bitmap(self));
+    rb_ensure(rb_roaring64_reverse_each_loop, (VALUE)it, rb_roaring64_iterator_free_ensure, (VALUE)it);
+    return self;
+}
+
+// Iterates over every element in the bitmap in descending order
+// @return [self,Enumerator] `self`, or an Enumerator if no block is given
+static VALUE rb_roaring64_reverse_each(VALUE self)
+{
+    RETURN_SIZED_ENUMERATOR(self, 0, 0, rb_roaring64_each_size);
+    return rb_roaring64_iterate(self, rb_roaring64_reverse_each_call);
 }
 
 static bool rb_roaring64_hash_i(uint64_t value, void *param) {
@@ -467,6 +502,7 @@ rb_roaring64_init(void)
   rb_define_method(cRoaringBitmap64, "remove?", rb_roaring64_remove_p, 1);
   rb_define_method(cRoaringBitmap64, "include?", rb_roaring64_include_p, 1);
   rb_define_method(cRoaringBitmap64, "each", rb_roaring64_each, 0);
+  rb_define_method(cRoaringBitmap64, "reverse_each", rb_roaring64_reverse_each, 0);
   rb_define_method(cRoaringBitmap64, "[]", rb_roaring64_aref, 1);
 
   rb_define_method(cRoaringBitmap64, "and!", rb_roaring64_and_inplace, 1);
