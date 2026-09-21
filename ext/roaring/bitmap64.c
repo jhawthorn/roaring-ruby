@@ -179,8 +179,12 @@ static VALUE rb_roaring64_aref(VALUE self, VALUE rankv)
     return self;
 }
 
-static VALUE rb_roaring64_min(VALUE self)
+static VALUE rb_roaring64_min(int argc, VALUE *argv, VALUE self)
 {
+    if (argc > 0 || rb_block_given_p()) {
+        return rb_call_super(argc, argv);
+    }
+
     roaring64_bitmap_t *data = get_bitmap(self);
 
     if (roaring64_bitmap_is_empty(data)) {
@@ -191,8 +195,12 @@ static VALUE rb_roaring64_min(VALUE self)
     }
 }
 
-static VALUE rb_roaring64_max(VALUE self)
+static VALUE rb_roaring64_max(int argc, VALUE *argv, VALUE self)
 {
+    if (argc > 0 || rb_block_given_p()) {
+        return rb_call_super(argc, argv);
+    }
+
     roaring64_bitmap_t *data = get_bitmap(self);
 
     if (roaring64_bitmap_is_empty(data)) {
@@ -423,8 +431,8 @@ rb_roaring64_init(void)
   rb_define_method(cRoaringBitmap64, "<=", rb_roaring64_lte, 1);
   rb_define_method(cRoaringBitmap64, "intersect?", rb_roaring64_intersect_p, 1);
 
-  rb_define_method(cRoaringBitmap64, "min", rb_roaring64_min, 0);
-  rb_define_method(cRoaringBitmap64, "max", rb_roaring64_max, 0);
+  rb_define_method(cRoaringBitmap64, "min", rb_roaring64_min, -1);
+  rb_define_method(cRoaringBitmap64, "max", rb_roaring64_max, -1);
 
   rb_define_method(cRoaringBitmap64, "run_optimize", rb_roaring64_run_optimize, 0);
   rb_define_method(cRoaringBitmap64, "statistics", rb_roaring64_statistics, 0);

@@ -22,7 +22,6 @@ module Roaring
     #
     #   @!parse alias_method :size, :cardinality
     #   @!parse alias_method :length, :cardinality
-    #   @!parse alias_method :count, :cardinality
     #
     #   @!parse alias_method :&, :and
     #   @!parse alias_method :|, :or
@@ -50,7 +49,6 @@ module Roaring
 
       alias_method :size, :cardinality
       alias_method :length, :cardinality
-      alias_method :count, :cardinality
 
       alias_method :&, :and
       alias_method :|, :or
@@ -110,6 +108,14 @@ module Roaring
 
     def initialize_copy(other)
       replace(other)
+    end
+
+    def count(*args, &block)
+      if args.empty? && !block
+        cardinality
+      else
+        super
+      end
     end
 
     # Check if `self` is a superset of `other`. A superset requires that `self` contain all of `other`'s elemtents. They may be equal.

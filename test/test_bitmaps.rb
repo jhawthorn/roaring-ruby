@@ -347,6 +347,19 @@ module BitmapTests
     assert_nil Bitmap32[].max
   end
 
+  def test_count_min_max_with_args_and_blocks
+    bitmap = bitmap_class[1, 2, 3, 10]
+
+    assert_equal 4, bitmap.count
+    assert_equal 2, bitmap.count { |x| x > 2 }
+    assert_equal 1, bitmap.count(3)
+
+    assert_equal [1, 2], bitmap.min(2)
+    assert_equal [10, 3], bitmap.max(2)
+    assert_equal 10, bitmap.min { |a, b| b <=> a }
+    assert_equal 1, bitmap.max { |a, b| b <=> a }
+  end
+
   def test_aref
     bitmap = bitmap_class[1, 2, 99]
     assert_equal 1, bitmap[0]

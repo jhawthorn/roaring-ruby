@@ -196,8 +196,12 @@ static VALUE rb_roaring32_aref(VALUE self, VALUE rankv)
 
 // Find the smallest integer in the bitmap
 // @return [Integer,nil] The smallest integer in the bitmap, or `nil` if it is empty
-static VALUE rb_roaring32_min(VALUE self)
+static VALUE rb_roaring32_min(int argc, VALUE *argv, VALUE self)
 {
+    if (argc > 0 || rb_block_given_p()) {
+        return rb_call_super(argc, argv);
+    }
+
     roaring_bitmap_t *data = get_bitmap(self);
 
     if (roaring_bitmap_is_empty(data)) {
@@ -210,8 +214,12 @@ static VALUE rb_roaring32_min(VALUE self)
 
 // Find the largest integer in the bitmap
 // @return [Integer,nil] The largest integer in the bitmap, or `nil` if it is empty
-static VALUE rb_roaring32_max(VALUE self)
+static VALUE rb_roaring32_max(int argc, VALUE *argv, VALUE self)
 {
+    if (argc > 0 || rb_block_given_p()) {
+        return rb_call_super(argc, argv);
+    }
+
     roaring_bitmap_t *data = get_bitmap(self);
 
     if (roaring_bitmap_is_empty(data)) {
@@ -484,8 +492,8 @@ rb_roaring32_init(void)
   rb_define_method(cRoaringBitmap32, "<=", rb_roaring32_lte, 1);
   rb_define_method(cRoaringBitmap32, "intersect?", rb_roaring32_intersect_p, 1);
 
-  rb_define_method(cRoaringBitmap32, "min", rb_roaring32_min, 0);
-  rb_define_method(cRoaringBitmap32, "max", rb_roaring32_max, 0);
+  rb_define_method(cRoaringBitmap32, "min", rb_roaring32_min, -1);
+  rb_define_method(cRoaringBitmap32, "max", rb_roaring32_max, -1);
 
   rb_define_method(cRoaringBitmap32, "run_optimize", rb_roaring32_run_optimize, 0);
   rb_define_method(cRoaringBitmap32, "statistics", rb_roaring32_statistics, 0);
