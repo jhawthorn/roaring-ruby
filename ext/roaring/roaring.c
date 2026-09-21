@@ -1,5 +1,5 @@
 // !!! DO NOT EDIT - THIS IS AN AUTO-GENERATED FILE !!!
-// Created by amalgamation.sh on 2026-09-11T17:26:32Z
+// Created by amalgamation.sh on 2026-09-21T17:50:39Z
 
 /*
  * The CRoaring project is under a dual license (Apache/MIT).
@@ -62,158 +62,6 @@
 #endif
 
 #include "roaring.h"  /* include public API definitions */
-/* begin file include/roaring/containers/perfparameters.h */
-/*
- * perfparameters.h
- *
- * This header centralizes a small set of performance-tuning constants and
- * heuristic defaults used by CRoaring container code. These parameters control
- * decisions such as initial container sizing and when lazy or eager operations
- * may convert between container representations.
- *
- * In practice, these values encode trade-offs between memory use, allocation
- * overhead, and execution speed for common workloads.
- */
-#ifndef PERFPARAMETERS_H_
-#define PERFPARAMETERS_H_
-
-#include <stdbool.h>
-
-#ifdef __cplusplus
-extern "C" {
-namespace roaring {
-namespace internal {
-#endif
-
-/**
-During lazy computations, we can transform array containers into bitset
-containers as
-long as we can expect them to have  ARRAY_LAZY_LOWERBOUND values.
-*/
-enum { ARRAY_LAZY_LOWERBOUND = 1024 };
-
-/* default initial size of a run container
-   setting it to zero delays the malloc.*/
-enum { RUN_DEFAULT_INIT_SIZE = 0 };
-
-/* default initial size of an array container
-   setting it to zero delays the malloc */
-enum { ARRAY_DEFAULT_INIT_SIZE = 0 };
-
-/* automatic bitset conversion during lazy or */
-#ifndef LAZY_OR_BITSET_CONVERSION
-#define LAZY_OR_BITSET_CONVERSION true
-#endif
-
-/* automatically attempt to convert a bitset to a full run during lazy
- * evaluation */
-#ifndef LAZY_OR_BITSET_CONVERSION_TO_FULL
-#define LAZY_OR_BITSET_CONVERSION_TO_FULL true
-#endif
-
-/* automatically attempt to convert a bitset to a full run */
-#ifndef OR_BITSET_CONVERSION_TO_FULL
-#define OR_BITSET_CONVERSION_TO_FULL true
-#endif
-
-#ifdef __cplusplus
-}
-}
-}  // extern "C" { namespace roaring { namespace internal {
-#endif
-
-#endif
-/* end file include/roaring/containers/perfparameters.h */
-/* begin file include/roaring/utilasm.h */
-/*
- * utilasm.h
- *
- * This file provides optional inline-assembly helpers for low-level bit
- * manipulation on supported x86/x64 targets. These macros are used to map a
- * few performance-sensitive operations, such as shifting, testing, setting,
- * and clearing bits, to specific machine instructions when inline assembly is
- * enabled.
- *
- * The intent is to centralize these architecture-specific primitives behind a
- * small interface so the rest of the codebase can use them conditionally while
- * keeping the generic implementation paths separate.
- */
-
-#ifndef INCLUDE_UTILASM_H_
-#define INCLUDE_UTILASM_H_
-
-
-#ifdef __cplusplus
-extern "C" {
-namespace roaring {
-#endif
-
-#if defined(CROARING_INLINE_ASM)
-#define CROARING_ASMBITMANIPOPTIMIZATION  // optimization flag
-
-#define ASM_SHIFT_RIGHT(srcReg, bitsReg, destReg) \
-    __asm volatile("shrx %1, %2, %0"              \
-                   : "=r"(destReg)                \
-                   :             /* write */      \
-                   "r"(bitsReg), /* read only */  \
-                   "r"(srcReg)   /* read only */  \
-    )
-
-#define ASM_INPLACESHIFT_RIGHT(srcReg, bitsReg)  \
-    __asm volatile("shrx %1, %0, %0"             \
-                   : "+r"(srcReg)                \
-                   :            /* read/write */ \
-                   "r"(bitsReg) /* read only */  \
-    )
-
-#define ASM_SHIFT_LEFT(srcReg, bitsReg, destReg) \
-    __asm volatile("shlx %1, %2, %0"             \
-                   : "=r"(destReg)               \
-                   :             /* write */     \
-                   "r"(bitsReg), /* read only */ \
-                   "r"(srcReg)   /* read only */ \
-    )
-// set bit at position testBit within testByte to 1 and
-// copy cmovDst to cmovSrc if that bit was previously clear
-#define ASM_SET_BIT_INC_WAS_CLEAR(testByte, testBit, count) \
-    __asm volatile(                                         \
-        "bts %2, %0\n"                                      \
-        "sbb $-1, %1\n"                                     \
-        : "+r"(testByte), /* read/write */                  \
-          "+r"(count)                                       \
-        :            /* read/write */                       \
-        "r"(testBit) /* read only */                        \
-    )
-
-#define ASM_CLEAR_BIT_DEC_WAS_SET(testByte, testBit, count) \
-    __asm volatile(                                         \
-        "btr %2, %0\n"                                      \
-        "sbb $0, %1\n"                                      \
-        : "+r"(testByte), /* read/write */                  \
-          "+r"(count)                                       \
-        :            /* read/write */                       \
-        "r"(testBit) /* read only */                        \
-    )
-
-#define ASM_BT64(testByte, testBit, count) \
-    __asm volatile(                        \
-        "bt %2,%1\n"                       \
-        "sbb %0,%0" /*could use setb */    \
-        : "=r"(count)                      \
-        :              /* write */         \
-        "r"(testByte), /* read only */     \
-        "r"(testBit)   /* read only */     \
-    )
-
-#endif
-
-#ifdef __cplusplus
-}
-}  // extern "C" { namespace roaring {
-#endif
-
-#endif /* INCLUDE_UTILASM_H_ */
-/* end file include/roaring/utilasm.h */
 /* begin file include/roaring/art/art.h */
 #ifndef ART_ART_H
 #define ART_ART_H
@@ -8015,36 +7863,36 @@ CROARING_UNTARGET_AVX512
          i < BITSET_CONTAINER_SIZE_IN_WORDS / (CROARING_WORDS_IN_AVX2_REG);             \
          i += innerloop) {                                                     \
       __m256i A1, A2, AO;                                                      \
-      A1 = _mm256_lddqu_si256((const __m256i *)(words_1));                     \
-      A2 = _mm256_lddqu_si256((const __m256i *)(words_2));                     \
+      A1 = _mm256_loadu_si256((const __m256i *)(words_1));                     \
+      A2 = _mm256_loadu_si256((const __m256i *)(words_2));                     \
       AO = avx_intrinsic(A2, A1);                                              \
       _mm256_storeu_si256((__m256i *)out, AO);                                 \
-      A1 = _mm256_lddqu_si256((const __m256i *)(words_1 + 32));                \
-      A2 = _mm256_lddqu_si256((const __m256i *)(words_2 + 32));                \
+      A1 = _mm256_loadu_si256((const __m256i *)(words_1 + 32));                \
+      A2 = _mm256_loadu_si256((const __m256i *)(words_2 + 32));                \
       AO = avx_intrinsic(A2, A1);                                              \
       _mm256_storeu_si256((__m256i *)(out + 32), AO);                          \
-      A1 = _mm256_lddqu_si256((const __m256i *)(words_1 + 64));                \
-      A2 = _mm256_lddqu_si256((const __m256i *)(words_2 + 64));                \
+      A1 = _mm256_loadu_si256((const __m256i *)(words_1 + 64));                \
+      A2 = _mm256_loadu_si256((const __m256i *)(words_2 + 64));                \
       AO = avx_intrinsic(A2, A1);                                              \
       _mm256_storeu_si256((__m256i *)(out + 64), AO);                          \
-      A1 = _mm256_lddqu_si256((const __m256i *)(words_1 + 96));                \
-      A2 = _mm256_lddqu_si256((const __m256i *)(words_2 + 96));                \
+      A1 = _mm256_loadu_si256((const __m256i *)(words_1 + 96));                \
+      A2 = _mm256_loadu_si256((const __m256i *)(words_2 + 96));                \
       AO = avx_intrinsic(A2, A1);                                              \
       _mm256_storeu_si256((__m256i *)(out + 96), AO);                          \
-      A1 = _mm256_lddqu_si256((const __m256i *)(words_1 + 128));               \
-      A2 = _mm256_lddqu_si256((const __m256i *)(words_2 + 128));               \
+      A1 = _mm256_loadu_si256((const __m256i *)(words_1 + 128));               \
+      A2 = _mm256_loadu_si256((const __m256i *)(words_2 + 128));               \
       AO = avx_intrinsic(A2, A1);                                              \
       _mm256_storeu_si256((__m256i *)(out + 128), AO);                         \
-      A1 = _mm256_lddqu_si256((const __m256i *)(words_1 + 160));               \
-      A2 = _mm256_lddqu_si256((const __m256i *)(words_2 + 160));               \
+      A1 = _mm256_loadu_si256((const __m256i *)(words_1 + 160));               \
+      A2 = _mm256_loadu_si256((const __m256i *)(words_2 + 160));               \
       AO = avx_intrinsic(A2, A1);                                              \
       _mm256_storeu_si256((__m256i *)(out + 160), AO);                         \
-      A1 = _mm256_lddqu_si256((const __m256i *)(words_1 + 192));               \
-      A2 = _mm256_lddqu_si256((const __m256i *)(words_2 + 192));               \
+      A1 = _mm256_loadu_si256((const __m256i *)(words_1 + 192));               \
+      A2 = _mm256_loadu_si256((const __m256i *)(words_2 + 192));               \
       AO = avx_intrinsic(A2, A1);                                              \
       _mm256_storeu_si256((__m256i *)(out + 192), AO);                         \
-      A1 = _mm256_lddqu_si256((const __m256i *)(words_1 + 224));               \
-      A2 = _mm256_lddqu_si256((const __m256i *)(words_2 + 224));               \
+      A1 = _mm256_loadu_si256((const __m256i *)(words_1 + 224));               \
+      A2 = _mm256_loadu_si256((const __m256i *)(words_2 + 224));               \
       AO = avx_intrinsic(A2, A1);                                              \
       _mm256_storeu_si256((__m256i *)(out + 224), AO);                         \
       out += 256;                                                              \
@@ -13543,7 +13391,7 @@ static inline int _avx2_run_container_cardinality(const run_container_t *run) {
     if (n_runs > step) {
         __m256i total = _mm256_setzero_si256();
         for (; k + step <= n_runs; k += step) {
-            __m256i ymm1 = _mm256_lddqu_si256((const __m256i *)(runs + k));
+            __m256i ymm1 = _mm256_loadu_si256((const __m256i *)(runs + k));
             __m256i justlengths = _mm256_srli_epi32(ymm1, 16);
             total = _mm256_add_epi32(total, justlengths);
         }
@@ -13775,8 +13623,9 @@ POSSIBILITY OF SUCH DAMAGE.
 // https://github.com/RoaringBitmap/CRoaring/issues/394
 #if CROARING_REGULAR_VISUAL_STUDIO
 #include <intrin.h>
-#elif (defined(HAVE_GCC_GET_CPUID) && defined(USE_GCC_GET_CPUID)) || \
-    defined(__FILC__)
+#elif CROARING_IS_X64 &&                                            \
+    ((defined(HAVE_GCC_GET_CPUID) && defined(USE_GCC_GET_CPUID)) || \
+     defined(__FILC__))
 #include <cpuid.h>
 #endif  // CROARING_REGULAR_VISUAL_STUDIO
 
@@ -15966,9 +15815,9 @@ roaring_bitmap_t *roaring_bitmap_or_many(size_t number,
         return roaring_bitmap_copy(x[0]);
     }
     roaring_bitmap_t *answer =
-        roaring_bitmap_lazy_or(x[0], x[1], LAZY_OR_BITSET_CONVERSION);
+        roaring_bitmap_lazy_or(x[0], x[1], CROARING_LAZY_OR_BITSET_CONVERSION);
     for (size_t i = 2; i < number; i++) {
-        roaring_bitmap_lazy_or_inplace(answer, x[i], LAZY_OR_BITSET_CONVERSION);
+        roaring_bitmap_lazy_or_inplace(answer, x[i], CROARING_LAZY_OR_BITSET_CONVERSION);
     }
     roaring_bitmap_repair_after_lazy(answer);
     return answer;
