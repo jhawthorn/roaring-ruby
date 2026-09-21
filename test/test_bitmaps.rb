@@ -354,6 +354,12 @@ module BitmapTests
     assert_equal 2, bitmap.count { |x| x > 2 }
     assert_equal 1, bitmap.count(3)
 
+    assert_equal 1, bitmap.first
+    assert_equal [1, 2], bitmap.first(2)
+    assert_equal [1, 2, 3, 10], bitmap.first(10)
+    assert_nil bitmap_class[].first
+    assert_equal [], bitmap_class[].first(2)
+
     assert_equal [1, 2], bitmap.min(2)
     assert_equal [10, 3], bitmap.max(2)
     assert_equal 10, bitmap.min { |a, b| b <=> a }

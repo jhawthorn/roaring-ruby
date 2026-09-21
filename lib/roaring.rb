@@ -35,7 +35,6 @@ module Roaring
     #   @!parse alias_method :delete, :remove
     #   @!parse alias_method :delete?, :remove?
     #
-    #   @!parse alias_method :first, :min
     #   @!parse alias_method :last, :max
     #
     #   @!parse alias_method :eql?, :==
@@ -62,7 +61,6 @@ module Roaring
       alias_method :delete, :remove
       alias_method :delete?, :remove?
 
-      alias_method :first, :min
       alias_method :last, :max
 
       alias_method :eql?, :==
@@ -116,6 +114,10 @@ module Roaring
       else
         super
       end
+    end
+
+    def first(n = nil)
+      n ? super : min
     end
 
     # Check if `self` is a superset of `other`. A superset requires that `self` contain all of `other`'s elemtents. They may be equal.
