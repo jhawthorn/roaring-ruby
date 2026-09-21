@@ -208,6 +208,20 @@ static VALUE rb_roaring64_hash(VALUE self)
     return ST2FIX(rb_hash_end(hash));
 }
 
+static bool rb_roaring64_to_a_i(uint64_t value, void *param) {
+    rb_ary_push((VALUE)param, ULL2NUM(value));
+    return true;
+}
+
+// @return [Array<Integer>] the elements in ascending order
+static VALUE rb_roaring64_to_a(VALUE self)
+{
+    roaring64_bitmap_t *data = get_bitmap(self);
+    VALUE ary = rb_ary_new_capa(roaring64_bitmap_get_cardinality(data));
+    roaring64_bitmap_iterate(data, rb_roaring64_to_a_i, (void *)ary);
+    return ary;
+}
+
 static VALUE rb_roaring64_aref(VALUE self, VALUE rankv)
 {
     roaring64_bitmap_t *data = get_bitmap(self);
@@ -471,6 +485,7 @@ rb_roaring64_init(void)
 
   rb_define_method(cRoaringBitmap64, "==", rb_roaring64_eq, 1);
   rb_define_method(cRoaringBitmap64, "hash", rb_roaring64_hash, 0);
+  rb_define_method(cRoaringBitmap64, "to_a", rb_roaring64_to_a, 0);
   rb_define_method(cRoaringBitmap64, "<", rb_roaring64_lt, 1);
   rb_define_method(cRoaringBitmap64, "<=", rb_roaring64_lte, 1);
   rb_define_method(cRoaringBitmap64, "intersect?", rb_roaring64_intersect_p, 1);

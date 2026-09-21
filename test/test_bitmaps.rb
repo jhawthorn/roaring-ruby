@@ -177,6 +177,19 @@ module BitmapTests
     assert_equal [1, 2, 5, 7], result
   end
 
+  def test_to_a
+    assert_equal [], bitmap_class.new.to_a
+    assert_equal [0, 5, 1000, bitmap_class::MAX], bitmap_class[bitmap_class::MAX, 1000, 5, 0].to_a
+
+    bitmap = bitmap_class[0...100_000]
+    assert_equal (0...100_000).to_a, bitmap.to_a
+    assert_equal bitmap.each.to_a, bitmap.to_a
+
+    bitmap.freeze
+    assert_equal (0...100_000).to_a, bitmap.to_a
+    refute_predicate bitmap.to_a, :frozen?
+  end
+
   def test_each_without_block
     bitmap = bitmap_class[1, 2, 5, 7]
     enum = bitmap.each
