@@ -407,6 +407,13 @@ module BitmapTests
     assert_equal [1, 2, 3, 10], bitmap.first(10)
     assert_nil bitmap_class[].first
     assert_equal [], bitmap_class[].first(2)
+    assert_equal [], bitmap.first(0)
+    assert_equal [1, 2, 3, 10], bitmap.first(2**40)
+    assert_raises(ArgumentError) { bitmap.first(-1) }
+    assert_raises(ArgumentError) { bitmap.first(1, 2) }
+    assert_equal [0], bitmap_class[0, bitmap_class::MAX].first(1)
+    assert_equal [0, bitmap_class::MAX], bitmap_class[0, bitmap_class::MAX].first(2)
+    assert_equal (0...70_000).to_a, bitmap_class[0...100_000].first(70_000)
 
     assert_equal [1, 2], bitmap.min(2)
     assert_equal [10, 3], bitmap.max(2)

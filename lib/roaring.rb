@@ -116,10 +116,6 @@ module Roaring
       end
     end
 
-    def first(n = nil)
-      n ? super : min
-    end
-
     # Check if `self` is a superset of `other`. A superset requires that `self` contain all of `other`'s elemtents. They may be equal.
     # @return [Boolean] `true` if `self` is a strict subset of `other`, otherwise `false`
     def superset?(other)

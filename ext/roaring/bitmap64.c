@@ -272,6 +272,38 @@ static VALUE rb_roaring64_aref(VALUE self, VALUE rankv)
     return self;
 }
 
+static VALUE rb_roaring64_first(int argc, VALUE *argv, VALUE self)
+{
+    rb_check_arity(argc, 0, 1);
+    roaring64_bitmap_t *data = get_bitmap(self);
+
+    if (argc == 0) {
+        return roaring64_bitmap_is_empty(data) ? Qnil : ULL2NUM(roaring64_bitmap_minimum(data));
+    }
+
+    long n = NUM2LONG(argv[0]);
+    if (n < 0) {
+        rb_raise(rb_eArgError, "attempt to take negative size");
+    }
+    uint64_t cardinality = roaring64_bitmap_get_cardinality(data);
+    if ((uint64_t)n > cardinality) {
+        n = (long)cardinality;
+    }
+
+    VALUE tmp;
+    uint64_t *buf = ALLOCV_N(uint64_t, tmp, n);
+    roaring64_iterator_t *it = roaring64_iterator_create(data);
+    n = (long)roaring64_iterator_read(it, buf, n);
+    roaring64_iterator_free(it);
+
+    VALUE ary = rb_ary_new_capa(n);
+    for (long i = 0; i < n; i++) {
+        rb_ary_push(ary, ULL2NUM(buf[i]));
+    }
+    ALLOCV_END(tmp);
+    return ary;
+}
+
 static VALUE rb_roaring64_min(int argc, VALUE *argv, VALUE self)
 {
     if (argc > 0 || rb_block_given_p()) {
@@ -526,6 +558,7 @@ rb_roaring64_init(void)
   rb_define_method(cRoaringBitmap64, "<=", rb_roaring64_lte, 1);
   rb_define_method(cRoaringBitmap64, "intersect?", rb_roaring64_intersect_p, 1);
 
+  rb_define_method(cRoaringBitmap64, "first", rb_roaring64_first, -1);
   rb_define_method(cRoaringBitmap64, "min", rb_roaring64_min, -1);
   rb_define_method(cRoaringBitmap64, "max", rb_roaring64_max, -1);
 

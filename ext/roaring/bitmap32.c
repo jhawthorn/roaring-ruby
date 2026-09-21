@@ -280,6 +280,35 @@ static VALUE rb_roaring32_aref(VALUE self, VALUE rankv)
     return self;
 }
 
+// @return [Integer,nil,Array<Integer>] the smallest element (or `nil`), or the first `n` elements when `n` is given
+static VALUE rb_roaring32_first(int argc, VALUE *argv, VALUE self)
+{
+    rb_check_arity(argc, 0, 1);
+    roaring_bitmap_t *data = get_bitmap(self);
+
+    if (argc == 0) {
+        return roaring_bitmap_is_empty(data) ? Qnil : UINT2NUM(roaring_bitmap_minimum(data));
+    }
+
+    long n = NUM2LONG(argv[0]);
+    if (n < 0) {
+        rb_raise(rb_eArgError, "attempt to take negative size");
+    }
+    uint64_t cardinality = roaring_bitmap_get_cardinality(data);
+    if ((uint64_t)n > cardinality) {
+        n = (long)cardinality;
+    }
+
+    VALUE ary = rb_ary_new_capa(n);
+    roaring_uint32_iterator_t it;
+    roaring_iterator_init(data, &it);
+    for (long i = 0; i < n; i++) {
+        rb_ary_push(ary, UINT2NUM(it.current_value));
+        roaring_uint32_iterator_advance(&it);
+    }
+    return ary;
+}
+
 // Find the smallest integer in the bitmap
 // @return [Integer,nil] The smallest integer in the bitmap, or `nil` if it is empty
 static VALUE rb_roaring32_min(int argc, VALUE *argv, VALUE self)
@@ -580,6 +609,7 @@ rb_roaring32_init(void)
   rb_define_method(cRoaringBitmap32, "<=", rb_roaring32_lte, 1);
   rb_define_method(cRoaringBitmap32, "intersect?", rb_roaring32_intersect_p, 1);
 
+  rb_define_method(cRoaringBitmap32, "first", rb_roaring32_first, -1);
   rb_define_method(cRoaringBitmap32, "min", rb_roaring32_min, -1);
   rb_define_method(cRoaringBitmap32, "max", rb_roaring32_max, -1);
 
