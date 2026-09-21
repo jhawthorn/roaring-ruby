@@ -108,10 +108,6 @@ module Roaring
       end
     end
 
-    def hash
-      to_a.hash
-    end
-
     def initialize_copy(other)
       replace(other)
     end

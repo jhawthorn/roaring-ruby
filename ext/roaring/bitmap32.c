@@ -160,6 +160,23 @@ static VALUE rb_roaring32_each(VALUE self)
     return self;
 }
 
+static bool rb_roaring32_hash_i(uint32_t value, void *param) {
+    st_index_t *hash = param;
+    *hash = rb_hash_uint(*hash, value);
+    return true;
+}
+
+// @return [Integer] a hash value consistent with {#eql?}
+static VALUE rb_roaring32_hash(VALUE self)
+{
+    roaring_bitmap_t *data = get_bitmap(self);
+
+    st_index_t hash = rb_hash_start((st_index_t)rb_obj_class(self));
+    roaring_iterate(data, rb_roaring32_hash_i, &hash);
+
+    return ST2FIX(rb_hash_end(hash));
+}
+
 // Find the nth smallest integer in the bitmap
 // @return [Integer,nil] The nth integer in the bitmap, or `nil` if `rankv` is `>= cardinality`
 static VALUE rb_roaring32_aref(VALUE self, VALUE rankv)
@@ -462,6 +479,7 @@ rb_roaring32_init(void)
   rb_define_method(cRoaringBitmap32, "xor_cardinality", rb_roaring32_xor_cardinality, 1);
 
   rb_define_method(cRoaringBitmap32, "==", rb_roaring32_eq, 1);
+  rb_define_method(cRoaringBitmap32, "hash", rb_roaring32_hash, 0);
   rb_define_method(cRoaringBitmap32, "<", rb_roaring32_lt, 1);
   rb_define_method(cRoaringBitmap32, "<=", rb_roaring32_lte, 1);
   rb_define_method(cRoaringBitmap32, "intersect?", rb_roaring32_intersect_p, 1);

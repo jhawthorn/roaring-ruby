@@ -450,6 +450,12 @@ module BitmapTests
     bitmap2 = bitmap_class[1, 2, 3, 4]
 
     assert_equal bitmap1.hash, bitmap2.hash
+    refute_equal bitmap1.hash, bitmap_class[1, 2, 3].hash
+    refute_equal bitmap1.hash, other_bitmap_class[1, 2, 3, 4].hash
+    refute_equal bitmap1.hash, [1, 2, 3, 4].hash
+
+    assert_equal :x, { bitmap1 => :x }[bitmap2]
+    assert_nil({ [1, 2, 3, 4] => :x }[bitmap1])
   end
 
   def test_inherits_from_bitmap

@@ -148,6 +148,22 @@ static VALUE rb_roaring64_each(VALUE self)
     return self;
 }
 
+static bool rb_roaring64_hash_i(uint64_t value, void *param) {
+    st_index_t *hash = param;
+    *hash = rb_hash_uint(*hash, (st_index_t)value);
+    return true;
+}
+
+static VALUE rb_roaring64_hash(VALUE self)
+{
+    roaring64_bitmap_t *data = get_bitmap(self);
+
+    st_index_t hash = rb_hash_start((st_index_t)rb_obj_class(self));
+    roaring64_bitmap_iterate(data, rb_roaring64_hash_i, &hash);
+
+    return ST2FIX(rb_hash_end(hash));
+}
+
 static VALUE rb_roaring64_aref(VALUE self, VALUE rankv)
 {
     roaring64_bitmap_t *data = get_bitmap(self);
@@ -402,6 +418,7 @@ rb_roaring64_init(void)
   rb_define_method(cRoaringBitmap64, "xor_cardinality", rb_roaring64_xor_cardinality, 1);
 
   rb_define_method(cRoaringBitmap64, "==", rb_roaring64_eq, 1);
+  rb_define_method(cRoaringBitmap64, "hash", rb_roaring64_hash, 0);
   rb_define_method(cRoaringBitmap64, "<", rb_roaring64_lt, 1);
   rb_define_method(cRoaringBitmap64, "<=", rb_roaring64_lte, 1);
   rb_define_method(cRoaringBitmap64, "intersect?", rb_roaring64_intersect_p, 1);
