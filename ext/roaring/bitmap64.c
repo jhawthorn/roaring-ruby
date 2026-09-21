@@ -347,6 +347,9 @@ static VALUE rb_roaring64_andnot(VALUE self, VALUE other)
 
 static VALUE rb_roaring64_eq(VALUE self, VALUE other)
 {
+    if (!rb_obj_is_kind_of(other, cRoaringBitmap64)) {
+        return Qfalse;
+    }
     return rb_roaring64_binary_op_bool(self, other, roaring64_bitmap_equals);
 }
 

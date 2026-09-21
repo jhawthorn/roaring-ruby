@@ -402,6 +402,9 @@ static VALUE rb_roaring32_andnot(VALUE self, VALUE other)
 // @return [Boolean] `true` if both bitmaps contain all the same elements, otherwise `false`
 static VALUE rb_roaring32_eq(VALUE self, VALUE other)
 {
+    if (!rb_obj_is_kind_of(other, cRoaringBitmap32)) {
+        return Qfalse;
+    }
     return rb_roaring32_binary_op_bool(self, other, roaring_bitmap_equals);
 }
 

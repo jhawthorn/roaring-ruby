@@ -201,6 +201,12 @@ module BitmapTests
     assert_equal r2, r1
     refute_equal r1, r3
     refute_equal r3, r1
+
+    refute_equal r1, nil
+    refute_equal r1, [1, 2, 3, 4]
+    refute_equal r1, Set[1, 2, 3, 4]
+    refute_equal r1, other_bitmap_class[1, 2, 3, 4]
+    refute_includes [1, :sym], r1
   end
 
   def test_comparisons
@@ -483,6 +489,10 @@ class Bitmap32Test < Minitest::Test
   def bitmap_class
     Roaring::Bitmap32
   end
+
+  def other_bitmap_class
+    Roaring::Bitmap64
+  end
 end
 
 class Bitmap64Test < Minitest::Test
@@ -490,5 +500,9 @@ class Bitmap64Test < Minitest::Test
 
   def bitmap_class
     Roaring::Bitmap64
+  end
+
+  def other_bitmap_class
+    Roaring::Bitmap32
   end
 end
