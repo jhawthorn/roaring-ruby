@@ -49,8 +49,13 @@ static roaring64_bitmap_t *get_bitmap(VALUE obj) {
     return bitmap;
 }
 
+static roaring64_bitmap_t *get_mutable_bitmap(VALUE obj) {
+    rb_check_frozen(obj);
+    return get_bitmap(obj);
+}
+
 static VALUE rb_roaring64_replace(VALUE self, VALUE other) {
-    roaring64_bitmap_t *self_data = get_bitmap(self);
+    roaring64_bitmap_t *self_data = get_mutable_bitmap(self);
     roaring64_bitmap_t *other_data = get_bitmap(other);
 
     roaring64_bitmap_overwrite(self_data, other_data);
@@ -67,7 +72,7 @@ static VALUE rb_roaring64_cardinality(VALUE self)
 
 static VALUE rb_roaring64_add(VALUE self, VALUE val)
 {
-    roaring64_bitmap_t *data = get_bitmap(self);
+    roaring64_bitmap_t *data = get_mutable_bitmap(self);
 
     uint64_t num = NUM2UINT64(val);
     roaring64_bitmap_add(data, num);
@@ -76,7 +81,7 @@ static VALUE rb_roaring64_add(VALUE self, VALUE val)
 
 static VALUE rb_roaring64_add_p(VALUE self, VALUE val)
 {
-    roaring64_bitmap_t *data = get_bitmap(self);
+    roaring64_bitmap_t *data = get_mutable_bitmap(self);
 
     uint64_t num = NUM2UINT64(val);
     return roaring64_bitmap_add_checked(data, num) ? self : Qnil;
@@ -84,7 +89,7 @@ static VALUE rb_roaring64_add_p(VALUE self, VALUE val)
 
 static VALUE rb_roaring64_add_range_closed(VALUE self, VALUE minv, VALUE maxv)
 {
-    roaring64_bitmap_t *data = get_bitmap(self);
+    roaring64_bitmap_t *data = get_mutable_bitmap(self);
 
     uint64_t min = NUM2UINT64(minv);
     uint64_t max = NUM2UINT64(maxv);
@@ -96,7 +101,7 @@ static VALUE rb_roaring64_add_range_closed(VALUE self, VALUE minv, VALUE maxv)
 
 static VALUE rb_roaring64_remove(VALUE self, VALUE val)
 {
-    roaring64_bitmap_t *data = get_bitmap(self);
+    roaring64_bitmap_t *data = get_mutable_bitmap(self);
 
     uint64_t num = NUM2UINT64(val);
     roaring64_bitmap_remove(data, num);
@@ -105,7 +110,7 @@ static VALUE rb_roaring64_remove(VALUE self, VALUE val)
 
 static VALUE rb_roaring64_remove_p(VALUE self, VALUE val)
 {
-    roaring64_bitmap_t *data = get_bitmap(self);
+    roaring64_bitmap_t *data = get_mutable_bitmap(self);
 
     uint64_t num = NUM2UINT64(val);
     return roaring64_bitmap_remove_checked(data, num) ? self : Qnil;
@@ -127,7 +132,7 @@ static VALUE rb_roaring64_empty_p(VALUE self)
 
 static VALUE rb_roaring64_clear(VALUE self)
 {
-    roaring64_bitmap_t *data = get_bitmap(self);
+    roaring64_bitmap_t *data = get_mutable_bitmap(self);
     roaring64_bitmap_clear(data);
     return self;
 }
@@ -216,7 +221,7 @@ static VALUE rb_roaring64_max(int argc, VALUE *argv, VALUE self)
 
 static VALUE rb_roaring64_run_optimize(VALUE self)
 {
-    roaring64_bitmap_t *data = get_bitmap(self);
+    roaring64_bitmap_t *data = get_mutable_bitmap(self);
     return RBOOL(roaring64_bitmap_run_optimize(data));
 }
 
@@ -291,7 +296,7 @@ static VALUE rb_roaring64_binary_op(VALUE self, VALUE other, binary_func func) {
 
 typedef void binary_func_inplace(roaring64_bitmap_t *, const roaring64_bitmap_t *);
 static VALUE rb_roaring64_binary_op_inplace(VALUE self, VALUE other, binary_func_inplace func) {
-    roaring64_bitmap_t *self_data = get_bitmap(self);
+    roaring64_bitmap_t *self_data = get_mutable_bitmap(self);
     roaring64_bitmap_t *other_data = get_bitmap(other);
 
     func(self_data, other_data);

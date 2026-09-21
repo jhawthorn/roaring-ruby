@@ -48,9 +48,14 @@ static roaring_bitmap_t *get_bitmap(VALUE obj) {
     return bitmap;
 }
 
+static roaring_bitmap_t *get_mutable_bitmap(VALUE obj) {
+    rb_check_frozen(obj);
+    return get_bitmap(obj);
+}
+
 // Replaces the contents of `self` with another bitmap
 static VALUE rb_roaring32_replace(VALUE self, VALUE other) {
-    roaring_bitmap_t *self_data = get_bitmap(self);
+    roaring_bitmap_t *self_data = get_mutable_bitmap(self);
     roaring_bitmap_t *other_data = get_bitmap(other);
 
     roaring_bitmap_overwrite(self_data, other_data);
@@ -70,7 +75,7 @@ static VALUE rb_roaring32_cardinality(VALUE self)
 // @param val [Integer] the value to add
 static VALUE rb_roaring32_add(VALUE self, VALUE val)
 {
-    roaring_bitmap_t *data = get_bitmap(self);
+    roaring_bitmap_t *data = get_mutable_bitmap(self);
 
     uint32_t num = NUM2UINT32(val);
     roaring_bitmap_add(data, num);
@@ -82,7 +87,7 @@ static VALUE rb_roaring32_add(VALUE self, VALUE val)
 // @return `self` if value was add, `nil` if value was already in the bitmap
 static VALUE rb_roaring32_add_p(VALUE self, VALUE val)
 {
-    roaring_bitmap_t *data = get_bitmap(self);
+    roaring_bitmap_t *data = get_mutable_bitmap(self);
 
     uint32_t num = NUM2UINT32(val);
     return roaring_bitmap_add_checked(data, num) ? self : Qnil;
@@ -90,7 +95,7 @@ static VALUE rb_roaring32_add_p(VALUE self, VALUE val)
 
 static VALUE rb_roaring32_add_range_closed(VALUE self, VALUE minv, VALUE maxv)
 {
-    roaring_bitmap_t *data = get_bitmap(self);
+    roaring_bitmap_t *data = get_mutable_bitmap(self);
 
     uint32_t min = NUM2UINT32(minv);
     uint32_t max = NUM2UINT32(maxv);
@@ -103,7 +108,7 @@ static VALUE rb_roaring32_add_range_closed(VALUE self, VALUE minv, VALUE maxv)
 // Removes an element from the bitmap
 static VALUE rb_roaring32_remove(VALUE self, VALUE val)
 {
-    roaring_bitmap_t *data = get_bitmap(self);
+    roaring_bitmap_t *data = get_mutable_bitmap(self);
 
     uint32_t num = NUM2UINT32(val);
     roaring_bitmap_remove(data, num);
@@ -116,7 +121,7 @@ static VALUE rb_roaring32_remove(VALUE self, VALUE val)
 // @return [self,nil] `self` if value was removed, `nil` if the value wasn't in the bitmap
 static VALUE rb_roaring32_remove_p(VALUE self, VALUE val)
 {
-    roaring_bitmap_t *data = get_bitmap(self);
+    roaring_bitmap_t *data = get_mutable_bitmap(self);
 
     uint32_t num = NUM2UINT32(val);
     return roaring_bitmap_remove_checked(data, num) ? self : Qnil;
@@ -141,7 +146,7 @@ static VALUE rb_roaring32_empty_p(VALUE self)
 // Removes all elements from the bitmap
 static VALUE rb_roaring32_clear(VALUE self)
 {
-    roaring_bitmap_t *data = get_bitmap(self);
+    roaring_bitmap_t *data = get_mutable_bitmap(self);
     roaring_bitmap_clear(data);
     return self;
 }
@@ -241,7 +246,7 @@ static VALUE rb_roaring32_max(int argc, VALUE *argv, VALUE self)
 // @return [Boolean] whether the result has at least one run container
 static VALUE rb_roaring32_run_optimize(VALUE self)
 {
-    roaring_bitmap_t *data = get_bitmap(self);
+    roaring_bitmap_t *data = get_mutable_bitmap(self);
     return RBOOL(roaring_bitmap_run_optimize(data));
 }
 
@@ -324,7 +329,7 @@ static VALUE rb_roaring32_binary_op(VALUE self, VALUE other, binary_func func) {
 
 typedef void binary_func_inplace(roaring_bitmap_t *, const roaring_bitmap_t *);
 static VALUE rb_roaring32_binary_op_inplace(VALUE self, VALUE other, binary_func_inplace func) {
-    roaring_bitmap_t *self_data = get_bitmap(self);
+    roaring_bitmap_t *self_data = get_mutable_bitmap(self);
     roaring_bitmap_t *other_data = get_bitmap(other);
 
     func(self_data, other_data);

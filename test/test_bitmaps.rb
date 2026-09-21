@@ -503,6 +503,30 @@ module BitmapTests
     assert_instance_of bitmap_class, bitmap_class[1] & bitmap
   end
 
+  def test_frozen
+    bitmap = bitmap_class[1, 2, 3].freeze
+    other = bitmap_class[4]
+
+    assert_raises(FrozenError) { bitmap.add(4) }
+    assert_raises(FrozenError) { bitmap << 4 }
+    assert_raises(FrozenError) { bitmap.add?(4) }
+    assert_raises(FrozenError) { bitmap.add_range(4, 6) }
+    assert_raises(FrozenError) { bitmap.remove(1) }
+    assert_raises(FrozenError) { bitmap.remove?(1) }
+    assert_raises(FrozenError) { bitmap.clear }
+    assert_raises(FrozenError) { bitmap.replace(other) }
+    assert_raises(FrozenError) { bitmap.and!(other) }
+    assert_raises(FrozenError) { bitmap.or!(other) }
+    assert_raises(FrozenError) { bitmap.xor!(other) }
+    assert_raises(FrozenError) { bitmap.andnot!(other) }
+    assert_raises(FrozenError) { bitmap.run_optimize }
+    assert_equal [1, 2, 3], bitmap.to_a
+
+    assert_equal bitmap_class[1, 2, 3, 4], bitmap | other
+    refute_predicate bitmap.dup, :frozen?
+    assert_equal [1, 2, 3, 4], (bitmap.dup << 4).to_a
+  end
+
   def test_inherits_from_bitmap
     assert_equal Roaring::Bitmap, bitmap_class.superclass
     assert_kind_of Roaring::Bitmap, bitmap_class.new
