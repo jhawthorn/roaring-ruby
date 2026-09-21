@@ -15,16 +15,23 @@ NUM2UINT32(VALUE num) {
     }
 }
 
-static void rb_roaring32_free(void *data)
+typedef struct {
+    roaring_bitmap_t *bitmap;
+    int iter_lev;
+} rb_roaring32_t;
+
+static void rb_roaring32_free(void *ptr)
 {
-    roaring_bitmap_free(data);
+    rb_roaring32_t *data = ptr;
+    roaring_bitmap_free(data->bitmap);
 }
 
-static size_t rb_roaring32_memsize(const void *data)
+static size_t rb_roaring32_memsize(const void *ptr)
 {
+    const rb_roaring32_t *data = ptr;
     // This is probably an estimate, "frozen" refers to the "frozen"
     // serialization format, which mimics the in-memory representation.
-    return sizeof(roaring_bitmap_t) + roaring_bitmap_frozen_size_in_bytes(data);
+    return sizeof(roaring_bitmap_t) + roaring_bitmap_frozen_size_in_bytes(data->bitmap);
 }
 
 static const rb_data_type_t roaring_type = {
@@ -33,24 +40,39 @@ static const rb_data_type_t roaring_type = {
         .dfree = rb_roaring32_free,
         .dsize = rb_roaring32_memsize
     },
-    .flags = RUBY_TYPED_FREE_IMMEDIATELY,
+    .flags = RUBY_TYPED_FREE_IMMEDIATELY | RUBY_TYPED_EMBEDDABLE,
 };
+
+static VALUE rb_roaring32_wrap(VALUE klass, roaring_bitmap_t *bitmap)
+{
+    rb_roaring32_t *data;
+    VALUE obj = TypedData_Make_Struct(klass, rb_roaring32_t, &roaring_type, data);
+    data->bitmap = bitmap;
+    return obj;
+}
 
 static VALUE rb_roaring32_alloc(VALUE self)
 {
-    roaring_bitmap_t *data = roaring_bitmap_create();
-    return TypedData_Wrap_Struct(self, &roaring_type, data);
+    return rb_roaring32_wrap(self, roaring_bitmap_create());
+}
+
+static rb_roaring32_t *get_data(VALUE obj) {
+    rb_roaring32_t *data;
+    TypedData_Get_Struct(obj, rb_roaring32_t, &roaring_type, data);
+    return data;
 }
 
 static roaring_bitmap_t *get_bitmap(VALUE obj) {
-    roaring_bitmap_t *bitmap;
-    TypedData_Get_Struct(obj, roaring_bitmap_t, &roaring_type, bitmap);
-    return bitmap;
+    return get_data(obj)->bitmap;
 }
 
 static roaring_bitmap_t *get_mutable_bitmap(VALUE obj) {
     rb_check_frozen(obj);
-    return get_bitmap(obj);
+    rb_roaring32_t *data = get_data(obj);
+    if (data->iter_lev > 0) {
+        rb_raise(rb_eRuntimeError, "can't modify bitmap during iteration");
+    }
+    return data->bitmap;
 }
 
 // Replaces the contents of `self` with another bitmap
@@ -163,13 +185,28 @@ static VALUE rb_roaring32_each_size(VALUE self, VALUE args, VALUE eobj)
 
 // Iterates over every element in the bitmap
 // @return [self,Enumerator] `self`, or an Enumerator if no block is given
+static VALUE rb_roaring32_each_call(VALUE self)
+{
+    roaring_iterate(get_bitmap(self), rb_roaring32_each_i, NULL);
+    return self;
+}
+
+static VALUE rb_roaring32_each_ensure(VALUE self)
+{
+    get_data(self)->iter_lev--;
+    return Qnil;
+}
+
 static VALUE rb_roaring32_each(VALUE self)
 {
     RETURN_SIZED_ENUMERATOR(self, 0, 0, rb_roaring32_each_size);
 
-    roaring_bitmap_t *data = get_bitmap(self);
-    roaring_iterate(data, rb_roaring32_each_i, NULL);
-    return self;
+    if (RB_OBJ_FROZEN(self)) {
+        return rb_roaring32_each_call(self);
+    }
+
+    get_data(self)->iter_lev++;
+    return rb_ensure(rb_roaring32_each_call, self, rb_roaring32_each_ensure, self);
 }
 
 static bool rb_roaring32_hash_i(uint32_t value, void *param) {
@@ -280,7 +317,7 @@ static VALUE rb_roaring32_deserialize(VALUE self, VALUE str)
         rb_raise(rb_eArgError, "invalid Roaring::Bitmap32 serialization");
     }
 
-    return TypedData_Wrap_Struct(self, &roaring_type, bitmap);
+    return rb_roaring32_wrap(self, bitmap);
 }
 
 // Provides statistics about the internal layout of the bitmap
@@ -324,7 +361,7 @@ static VALUE rb_roaring32_binary_op(VALUE self, VALUE other, binary_func func) {
 
     roaring_bitmap_t *result = func(self_data, other_data);
 
-    return TypedData_Wrap_Struct(rb_obj_class(self), &roaring_type, result);
+    return rb_roaring32_wrap(rb_obj_class(self), result);
 }
 
 typedef void binary_func_inplace(roaring_bitmap_t *, const roaring_bitmap_t *);

@@ -527,6 +527,32 @@ module BitmapTests
     assert_equal [1, 2, 3, 4], (bitmap.dup << 4).to_a
   end
 
+  def test_mutation_during_each
+    bitmap = bitmap_class[0...100]
+
+    %i[add add? remove remove?].each do |m|
+      e = assert_raises(RuntimeError) { bitmap.each { |x| bitmap.send(m, x) } }
+      assert_equal "can't modify bitmap during iteration", e.message
+    end
+    assert_raises(RuntimeError) { bitmap.each { bitmap.clear } }
+    assert_raises(RuntimeError) { bitmap.each { bitmap.replace(bitmap_class[1]) } }
+    assert_raises(RuntimeError) { bitmap.each { bitmap.or!(bitmap_class[1]) } }
+    assert_raises(RuntimeError) { bitmap.each { bitmap.run_optimize } }
+    assert_raises(RuntimeError) { bitmap.each { bitmap.each { bitmap.add(1) } } }
+    assert_equal (0...100).to_a, bitmap.to_a
+
+    bitmap.each { break }
+    assert_raises(ArgumentError) { bitmap.each { raise ArgumentError } }
+    bitmap.each { bitmap.each { } }
+    bitmap.add(100)
+    assert_equal 101, bitmap.size
+
+    bitmap.each { |x| bitmap.include?(x); bitmap | bitmap_class[x]; bitmap.dup.add(x) }
+
+    bitmap.freeze
+    bitmap.each { bitmap.each { } }
+  end
+
   def test_inherits_from_bitmap
     assert_equal Roaring::Bitmap, bitmap_class.superclass
     assert_kind_of Roaring::Bitmap, bitmap_class.new
