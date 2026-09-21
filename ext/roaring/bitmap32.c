@@ -197,20 +197,55 @@ static VALUE rb_roaring32_each_ensure(VALUE self)
     return Qnil;
 }
 
-static VALUE rb_roaring32_iterate(VALUE self, VALUE (*body)(VALUE))
+static VALUE rb_roaring32_iterate(VALUE self, VALUE (*body)(VALUE), VALUE arg)
 {
     if (RB_OBJ_FROZEN(self)) {
-        return body(self);
+        return body(arg);
     }
 
     get_data(self)->iter_lev++;
-    return rb_ensure(body, self, rb_roaring32_each_ensure, self);
+    return rb_ensure(body, arg, rb_roaring32_each_ensure, self);
 }
 
 static VALUE rb_roaring32_each(VALUE self)
 {
     RETURN_SIZED_ENUMERATOR(self, 0, 0, rb_roaring32_each_size);
-    return rb_roaring32_iterate(self, rb_roaring32_each_call);
+    return rb_roaring32_iterate(self, rb_roaring32_each_call, self);
+}
+
+struct rb_roaring32_each_from_args {
+    VALUE self;
+    uint32_t min;
+};
+
+static VALUE rb_roaring32_each_from_size(VALUE self, VALUE args, VALUE eobj)
+{
+    roaring_bitmap_t *data = get_bitmap(self);
+    uint32_t min = NUM2UINT32(RARRAY_AREF(args, 0));
+    uint64_t below = min == 0 ? 0 : roaring_bitmap_rank(data, min - 1);
+    return ULL2NUM(roaring_bitmap_get_cardinality(data) - below);
+}
+
+static VALUE rb_roaring32_each_from_call(VALUE arg)
+{
+    struct rb_roaring32_each_from_args *args = (void *)arg;
+    roaring_uint32_iterator_t it;
+    roaring_iterator_init(get_bitmap(args->self), &it);
+    roaring_uint32_iterator_move_equalorlarger(&it, args->min);
+    while (it.has_value) {
+        rb_yield(UINT2NUM(it.current_value));
+        roaring_uint32_iterator_advance(&it);
+    }
+    return args->self;
+}
+
+// Iterates in ascending order over every element greater than or equal to `min`
+// @return [self,Enumerator] `self`, or an Enumerator if no block is given
+static VALUE rb_roaring32_each_from(VALUE self, VALUE minv)
+{
+    struct rb_roaring32_each_from_args args = { self, NUM2UINT32(minv) };
+    RETURN_SIZED_ENUMERATOR(self, 1, &minv, rb_roaring32_each_from_size);
+    return rb_roaring32_iterate(self, rb_roaring32_each_from_call, (VALUE)&args);
 }
 
 static VALUE rb_roaring32_reverse_each_call(VALUE self)
@@ -229,7 +264,7 @@ static VALUE rb_roaring32_reverse_each_call(VALUE self)
 static VALUE rb_roaring32_reverse_each(VALUE self)
 {
     RETURN_SIZED_ENUMERATOR(self, 0, 0, rb_roaring32_each_size);
-    return rb_roaring32_iterate(self, rb_roaring32_reverse_each_call);
+    return rb_roaring32_iterate(self, rb_roaring32_reverse_each_call, self);
 }
 
 static bool rb_roaring32_hash_i(uint32_t value, void *param) {
@@ -586,6 +621,7 @@ rb_roaring32_init(void)
   rb_define_method(cRoaringBitmap32, "include?", rb_roaring32_include_p, 1);
   rb_define_method(cRoaringBitmap32, "each", rb_roaring32_each, 0);
   rb_define_method(cRoaringBitmap32, "reverse_each", rb_roaring32_reverse_each, 0);
+  rb_define_method(cRoaringBitmap32, "each_from", rb_roaring32_each_from, 1);
   rb_define_method(cRoaringBitmap32, "[]", rb_roaring32_aref, 1);
 
   rb_define_method(cRoaringBitmap32, "and!", rb_roaring32_and_inplace, 1);

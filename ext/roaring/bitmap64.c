@@ -180,20 +180,20 @@ static VALUE rb_roaring64_each_ensure(VALUE self)
     return Qnil;
 }
 
-static VALUE rb_roaring64_iterate(VALUE self, VALUE (*body)(VALUE))
+static VALUE rb_roaring64_iterate(VALUE self, VALUE (*body)(VALUE), VALUE arg)
 {
     if (RB_OBJ_FROZEN(self)) {
-        return body(self);
+        return body(arg);
     }
 
     get_data(self)->iter_lev++;
-    return rb_ensure(body, self, rb_roaring64_each_ensure, self);
+    return rb_ensure(body, arg, rb_roaring64_each_ensure, self);
 }
 
 static VALUE rb_roaring64_each(VALUE self)
 {
     RETURN_SIZED_ENUMERATOR(self, 0, 0, rb_roaring64_each_size);
-    return rb_roaring64_iterate(self, rb_roaring64_each_call);
+    return rb_roaring64_iterate(self, rb_roaring64_each_call, self);
 }
 
 static VALUE rb_roaring64_reverse_each_loop(VALUE arg)
@@ -224,7 +224,48 @@ static VALUE rb_roaring64_reverse_each_call(VALUE self)
 static VALUE rb_roaring64_reverse_each(VALUE self)
 {
     RETURN_SIZED_ENUMERATOR(self, 0, 0, rb_roaring64_each_size);
-    return rb_roaring64_iterate(self, rb_roaring64_reverse_each_call);
+    return rb_roaring64_iterate(self, rb_roaring64_reverse_each_call, self);
+}
+
+struct rb_roaring64_each_from_args {
+    VALUE self;
+    uint64_t min;
+};
+
+static VALUE rb_roaring64_each_from_size(VALUE self, VALUE args, VALUE eobj)
+{
+    roaring64_bitmap_t *data = get_bitmap(self);
+    uint64_t min = NUM2UINT64(RARRAY_AREF(args, 0));
+    uint64_t below = min == 0 ? 0 : roaring64_bitmap_rank(data, min - 1);
+    return ULL2NUM(roaring64_bitmap_get_cardinality(data) - below);
+}
+
+static VALUE rb_roaring64_each_from_loop(VALUE arg)
+{
+    roaring64_iterator_t *it = (roaring64_iterator_t *)arg;
+    while (roaring64_iterator_has_value(it)) {
+        rb_yield(ULL2NUM(roaring64_iterator_value(it)));
+        roaring64_iterator_advance(it);
+    }
+    return Qnil;
+}
+
+static VALUE rb_roaring64_each_from_call(VALUE arg)
+{
+    struct rb_roaring64_each_from_args *args = (void *)arg;
+    roaring64_iterator_t *it = roaring64_iterator_create(get_bitmap(args->self));
+    roaring64_iterator_move_equalorlarger(it, args->min);
+    rb_ensure(rb_roaring64_each_from_loop, (VALUE)it, rb_roaring64_iterator_free_ensure, (VALUE)it);
+    return args->self;
+}
+
+// Iterates in ascending order over every element greater than or equal to `min`
+// @return [self,Enumerator] `self`, or an Enumerator if no block is given
+static VALUE rb_roaring64_each_from(VALUE self, VALUE minv)
+{
+    struct rb_roaring64_each_from_args args = { self, NUM2UINT64(minv) };
+    RETURN_SIZED_ENUMERATOR(self, 1, &minv, rb_roaring64_each_from_size);
+    return rb_roaring64_iterate(self, rb_roaring64_each_from_call, (VALUE)&args);
 }
 
 static bool rb_roaring64_hash_i(uint64_t value, void *param) {
@@ -535,6 +576,7 @@ rb_roaring64_init(void)
   rb_define_method(cRoaringBitmap64, "include?", rb_roaring64_include_p, 1);
   rb_define_method(cRoaringBitmap64, "each", rb_roaring64_each, 0);
   rb_define_method(cRoaringBitmap64, "reverse_each", rb_roaring64_reverse_each, 0);
+  rb_define_method(cRoaringBitmap64, "each_from", rb_roaring64_each_from, 1);
   rb_define_method(cRoaringBitmap64, "[]", rb_roaring64_aref, 1);
 
   rb_define_method(cRoaringBitmap64, "and!", rb_roaring64_and_inplace, 1);

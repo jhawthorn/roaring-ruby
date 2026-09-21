@@ -200,6 +200,38 @@ module BitmapTests
     assert_equal 100_001, bitmap.size
   end
 
+  def test_each_from
+    bitmap = bitmap_class[1, 2, 5, 7, bitmap_class::MAX]
+    result = []
+    assert_same bitmap, bitmap.each_from(3) { |x| result << x }
+    assert_equal [5, 7, bitmap_class::MAX], result
+
+    assert_equal [1, 2, 5, 7, bitmap_class::MAX], bitmap.each_from(0).to_a
+    assert_equal [2, 5, 7, bitmap_class::MAX], bitmap.each_from(2).to_a
+    assert_equal [bitmap_class::MAX], bitmap.each_from(bitmap_class::MAX).to_a
+    assert_equal [], bitmap_class.new.each_from(0).to_a
+    assert_raises(RangeError) { bitmap.each_from(-1) }
+    assert_raises(RangeError) { bitmap.each_from(bitmap_class::MAX + 1) }
+
+    enum = bitmap.each_from(5)
+    assert_kind_of Enumerator, enum
+    assert_equal 3, enum.size
+    assert_equal 5, enum.next
+    assert_equal 5, bitmap.each_from(0).size
+    assert_equal 1, bitmap.each_from(bitmap_class::MAX).size
+
+    bitmap = bitmap_class[0...100_000]
+    assert_equal (70_000...100_000).to_a, bitmap.each_from(70_000).to_a
+    assert_equal 30_000, bitmap.each_from(70_000).size
+    assert_equal [], bitmap.each_from(100_000).to_a
+
+    assert_equal 6, bitmap.each_from(5) { |x| break x if x.even? }
+    assert_raises(RuntimeError) { bitmap.each_from(5) { bitmap.add(1) } }
+    assert_raises(ArgumentError) { bitmap.each_from(5) { raise ArgumentError } }
+    bitmap.add(200_000)
+    assert_equal 100_001, bitmap.size
+  end
+
   def test_to_a
     assert_equal [], bitmap_class.new.to_a
     assert_equal [0, 5, 1000, bitmap_class::MAX], bitmap_class[bitmap_class::MAX, 1000, 5, 0].to_a
