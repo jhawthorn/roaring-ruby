@@ -275,7 +275,7 @@ static VALUE rb_roaring32_deserialize(VALUE self, VALUE str)
         rb_raise(rb_eArgError, "invalid Roaring::Bitmap32 serialization");
     }
 
-    return TypedData_Wrap_Struct(cRoaringBitmap32, &roaring_type, bitmap);
+    return TypedData_Wrap_Struct(self, &roaring_type, bitmap);
 }
 
 // Provides statistics about the internal layout of the bitmap
@@ -319,7 +319,7 @@ static VALUE rb_roaring32_binary_op(VALUE self, VALUE other, binary_func func) {
 
     roaring_bitmap_t *result = func(self_data, other_data);
 
-    return TypedData_Wrap_Struct(cRoaringBitmap32, &roaring_type, result);
+    return TypedData_Wrap_Struct(rb_obj_class(self), &roaring_type, result);
 }
 
 typedef void binary_func_inplace(roaring_bitmap_t *, const roaring_bitmap_t *);

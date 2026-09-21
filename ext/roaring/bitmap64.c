@@ -244,7 +244,7 @@ static VALUE rb_roaring64_deserialize(VALUE self, VALUE str)
         rb_raise(rb_eArgError, "invalid Roaring::Bitmap64 serialization");
     }
 
-    return TypedData_Wrap_Struct(cRoaringBitmap64, &roaring64_type, bitmap);
+    return TypedData_Wrap_Struct(self, &roaring64_type, bitmap);
 }
 
 static VALUE rb_roaring64_statistics(VALUE self)
@@ -286,7 +286,7 @@ static VALUE rb_roaring64_binary_op(VALUE self, VALUE other, binary_func func) {
 
     roaring64_bitmap_t *result = func(self_data, other_data);
 
-    return TypedData_Wrap_Struct(cRoaringBitmap64, &roaring64_type, result);
+    return TypedData_Wrap_Struct(rb_obj_class(self), &roaring64_type, result);
 }
 
 typedef void binary_func_inplace(roaring64_bitmap_t *, const roaring64_bitmap_t *);

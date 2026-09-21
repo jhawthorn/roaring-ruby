@@ -91,7 +91,7 @@ module Roaring
     def initialize(enum = nil)
       return unless enum
 
-      if enum.instance_of?(self.class)
+      if Bitmap === enum
         replace(enum)
       elsif Range === enum
         if enum.exclude_end?

@@ -489,6 +489,20 @@ module BitmapTests
     assert_nil({ [1, 2, 3, 4] => :x }[bitmap1])
   end
 
+  def test_subclass
+    subclass = Class.new(bitmap_class)
+
+    bitmap = subclass.new(bitmap_class[1, 2, 3])
+    assert_instance_of subclass, bitmap
+    assert_equal [1, 2, 3], bitmap.to_a
+
+    assert_instance_of subclass, bitmap & subclass[2, 3]
+    assert_instance_of subclass, bitmap | bitmap_class[4]
+    assert_instance_of subclass, bitmap.dup
+    assert_instance_of subclass, subclass.deserialize(bitmap.serialize)
+    assert_instance_of bitmap_class, bitmap_class[1] & bitmap
+  end
+
   def test_inherits_from_bitmap
     assert_equal Roaring::Bitmap, bitmap_class.superclass
     assert_kind_of Roaring::Bitmap, bitmap_class.new
