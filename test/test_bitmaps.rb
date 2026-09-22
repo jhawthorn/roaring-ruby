@@ -375,6 +375,16 @@ module BitmapTests
     assert_equal (r1 ^ r2).cardinality, r1.xor_cardinality(r2)
   end
 
+  def test_andnot_cardinality
+    r1 = bitmap_class[1, 2, 3, 4]
+    r2 = bitmap_class[3, 4, 5, 6]
+    assert_equal 2, r1.andnot_cardinality(r2)
+    assert_equal 2, r2.andnot_cardinality(r1)
+    assert_equal (r1 - r2).cardinality, r1.andnot_cardinality(r2)
+    assert_equal 0, r1.andnot_cardinality(r1)
+    assert_raises(TypeError) { r1.andnot_cardinality(other_bitmap_class[1]) }
+  end
+
   def test_difference
     r1 = bitmap_class[1, 2, 3, 4]
     r2 = bitmap_class[3, 4, 5, 6]

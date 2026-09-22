@@ -566,6 +566,14 @@ static VALUE rb_roaring32_xor_cardinality(VALUE self, VALUE other)
     return rb_roaring32_binary_op_cardinality(self, other, roaring_bitmap_xor_cardinality);
 }
 
+// Computes the cardinality of the difference between two bitmaps without
+// materializing the result
+// @return [Integer] the number of elements in `self` but not in `other`
+static VALUE rb_roaring32_andnot_cardinality(VALUE self, VALUE other)
+{
+    return rb_roaring32_binary_op_cardinality(self, other, roaring_bitmap_andnot_cardinality);
+}
+
 // Computes the difference between two bitmaps
 // @return [Bitmap32] a new bitmap containing all elements in `self`, but not in `other`
 static VALUE rb_roaring32_andnot(VALUE self, VALUE other)
@@ -637,6 +645,7 @@ rb_roaring32_init(void)
   rb_define_method(cRoaringBitmap32, "and_cardinality", rb_roaring32_and_cardinality, 1);
   rb_define_method(cRoaringBitmap32, "or_cardinality", rb_roaring32_or_cardinality, 1);
   rb_define_method(cRoaringBitmap32, "xor_cardinality", rb_roaring32_xor_cardinality, 1);
+  rb_define_method(cRoaringBitmap32, "andnot_cardinality", rb_roaring32_andnot_cardinality, 1);
 
   rb_define_method(cRoaringBitmap32, "==", rb_roaring32_eq, 1);
   rb_define_method(cRoaringBitmap32, "hash", rb_roaring32_hash, 0);

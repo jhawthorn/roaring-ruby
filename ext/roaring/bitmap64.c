@@ -530,6 +530,11 @@ static VALUE rb_roaring64_xor_cardinality(VALUE self, VALUE other)
     return rb_roaring64_binary_op_cardinality(self, other, roaring64_bitmap_xor_cardinality);
 }
 
+static VALUE rb_roaring64_andnot_cardinality(VALUE self, VALUE other)
+{
+    return rb_roaring64_binary_op_cardinality(self, other, roaring64_bitmap_andnot_cardinality);
+}
+
 static VALUE rb_roaring64_andnot(VALUE self, VALUE other)
 {
     return rb_roaring64_binary_op(self, other, roaring64_bitmap_andnot);
@@ -592,6 +597,7 @@ rb_roaring64_init(void)
   rb_define_method(cRoaringBitmap64, "and_cardinality", rb_roaring64_and_cardinality, 1);
   rb_define_method(cRoaringBitmap64, "or_cardinality", rb_roaring64_or_cardinality, 1);
   rb_define_method(cRoaringBitmap64, "xor_cardinality", rb_roaring64_xor_cardinality, 1);
+  rb_define_method(cRoaringBitmap64, "andnot_cardinality", rb_roaring64_andnot_cardinality, 1);
 
   rb_define_method(cRoaringBitmap64, "==", rb_roaring64_eq, 1);
   rb_define_method(cRoaringBitmap64, "hash", rb_roaring64_hash, 0);
