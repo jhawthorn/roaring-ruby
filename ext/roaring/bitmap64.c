@@ -432,15 +432,6 @@ static VALUE rb_roaring64_statistics(VALUE self)
     return ret;
 }
 
-typedef bool binary_func_bool(const roaring64_bitmap_t *, const roaring64_bitmap_t *);
-static VALUE rb_roaring64_binary_op_bool(VALUE self, VALUE other, binary_func_bool func) {
-    roaring64_bitmap_t *self_data = get_bitmap(self);
-    roaring64_bitmap_t *other_data = get_bitmap(other);
-
-    bool result = func(self_data, other_data);
-    return RBOOL(result);
-}
-
 typedef uint64_t binary_func_cardinality(const roaring64_bitmap_t *, const roaring64_bitmap_t *);
 static VALUE rb_roaring64_binary_op_cardinality(VALUE self, VALUE other, binary_func_cardinality func) {
     roaring64_bitmap_t *self_data = get_bitmap(self);
@@ -607,6 +598,15 @@ static const struct rb_roaring64_pred rb_roaring64_strict_superset_pred = {
     rb_roaring64_is_strict_superset, rb_roaring64_strictly_contains_range_closed
 };
 
+static bool rb_roaring64_intersect_range_closed(const roaring64_bitmap_t *r, uint64_t min, uint64_t max)
+{
+    return roaring64_bitmap_intersect_with_range(r, min, max) || roaring64_bitmap_contains(r, max);
+}
+
+static const struct rb_roaring64_pred rb_roaring64_intersect_pred = {
+    roaring64_bitmap_intersect, rb_roaring64_intersect_range_closed
+};
+
 static VALUE rb_roaring64_and_inplace(VALUE self, VALUE other)
 {
     return rb_roaring64_op_inplace(self, other, &rb_roaring64_and_op);
@@ -674,7 +674,7 @@ static VALUE rb_roaring64_eq(VALUE self, VALUE other)
     if (!rb_obj_is_kind_of(other, cRoaringBitmap64)) {
         return Qfalse;
     }
-    return rb_roaring64_binary_op_bool(self, other, roaring64_bitmap_equals);
+    return RBOOL(roaring64_bitmap_equals(get_bitmap(self), get_bitmap(other)));
 }
 
 static VALUE rb_roaring64_lt(VALUE self, VALUE other)
@@ -699,7 +699,7 @@ static VALUE rb_roaring64_gte(VALUE self, VALUE other)
 
 static VALUE rb_roaring64_intersect_p(VALUE self, VALUE other)
 {
-    return rb_roaring64_binary_op_bool(self, other, roaring64_bitmap_intersect);
+    return rb_roaring64_pred(self, other, &rb_roaring64_intersect_pred);
 }
 
 void

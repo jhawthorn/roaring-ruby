@@ -448,6 +448,59 @@ module BitmapTests
     assert r3.disjoint?(r1)
   end
 
+  def test_intersect_with_range
+    max = bitmap_class::MAX
+
+    assert bitmap_class[3, 4].intersect?(4..5)
+    assert bitmap_class[3, 4].intersect?(4...5)
+    refute bitmap_class[3, 4].intersect?(5..6)
+    refute bitmap_class[3, 4].intersect?(4...4)
+    refute bitmap_class[3, 4].intersect?(5...4)
+    assert bitmap_class[3, 4].intersect?(..3)
+    refute bitmap_class[3, 4].intersect?(...3)
+    assert bitmap_class[3, 4].intersect?(4..)
+    refute bitmap_class[3, 4].intersect?(5..)
+    assert bitmap_class[0].intersect?(0..0)
+    refute bitmap_class[0].intersect?(0...0)
+    refute bitmap_class[0].intersect?(1..)
+    assert bitmap_class[max].intersect?(max..max)
+    assert bitmap_class[max].intersect?(max..)
+    refute bitmap_class[max].intersect?(max...max)
+    refute bitmap_class[max].intersect?(...max)
+    refute bitmap_class[].intersect?(0..)
+    refute bitmap_class[].intersect?(0...0)
+    assert bitmap_class[2**32 - 1].intersect?(0...2**32)
+    assert bitmap_class[7].freeze.intersect?(7..7)
+
+    assert bitmap_class[3, 4].disjoint?(5..6)
+    refute bitmap_class[3, 4].disjoint?(4..5)
+
+    bitmap = bitmap_class[7]
+    assert_raises(RangeError) { bitmap.intersect?(-1..3) }
+    assert_raises(RangeError) { bitmap.intersect?(max..max + 1) }
+    assert_raises(TypeError) { bitmap.intersect?("a".."b") }
+  end
+
+  def test_intersect_with_enumerable
+    assert bitmap_class[3, 4].intersect?([4, 5])
+    refute bitmap_class[3, 4].intersect?([5, 6])
+    assert bitmap_class[3, 4].intersect?(Set[3])
+    assert bitmap_class[3, 4].intersect?([3, 5].each)
+    assert bitmap_class[3, 4].intersect?(other_bitmap_class[4])
+    refute bitmap_class[3, 4].intersect?([])
+    refute bitmap_class[].intersect?([1])
+    refute bitmap_class[].intersect?([])
+
+    refute bitmap_class[3, 4].disjoint?([4])
+    assert bitmap_class[3, 4].disjoint?([])
+
+    bitmap = bitmap_class[7]
+    assert_raises(RangeError) { bitmap.intersect?([-1]) }
+    assert_raises(TypeError) { bitmap.intersect?([7, "a"]) }
+    assert_raises(TypeError) { bitmap.intersect?(1) }
+    assert_raises(TypeError) { bitmap.intersect?(nil) }
+  end
+
   def test_and
     r1 = bitmap_class[1, 2, 3, 4]
     r2 = bitmap_class[3, 4, 5, 6]

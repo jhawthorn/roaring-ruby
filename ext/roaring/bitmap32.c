@@ -445,15 +445,6 @@ static VALUE rb_roaring32_statistics(VALUE self)
     return ret;
 }
 
-typedef bool binary_func_bool(const roaring_bitmap_t *, const roaring_bitmap_t *);
-static VALUE rb_roaring32_binary_op_bool(VALUE self, VALUE other, binary_func_bool func) {
-    roaring_bitmap_t *self_data = get_bitmap(self);
-    roaring_bitmap_t *other_data = get_bitmap(other);
-
-    bool result = func(self_data, other_data);
-    return RBOOL(result);
-}
-
 typedef uint64_t binary_func_cardinality(const roaring_bitmap_t *, const roaring_bitmap_t *);
 static VALUE rb_roaring32_binary_op_cardinality(VALUE self, VALUE other, binary_func_cardinality func) {
     roaring_bitmap_t *self_data = get_bitmap(self);
@@ -638,6 +629,15 @@ static const struct rb_roaring32_pred rb_roaring32_strict_superset_pred = {
     rb_roaring32_is_strict_superset, rb_roaring32_strictly_contains_range_closed
 };
 
+static bool rb_roaring32_intersect_range_closed(const roaring_bitmap_t *r, uint32_t min, uint32_t max)
+{
+    return roaring_bitmap_intersect_with_range(r, min, (uint64_t)max + 1);
+}
+
+static const struct rb_roaring32_pred rb_roaring32_intersect_pred = {
+    roaring_bitmap_intersect, rb_roaring32_intersect_range_closed
+};
+
 // Inplace version of {and}. `other` may be a Bitmap32, a Range, or any Enumerable of Integers.
 // @return [self] the modified Bitmap
 static VALUE rb_roaring32_and_inplace(VALUE self, VALUE other)
@@ -733,7 +733,7 @@ static VALUE rb_roaring32_eq(VALUE self, VALUE other)
     if (!rb_obj_is_kind_of(other, cRoaringBitmap32)) {
         return Qfalse;
     }
-    return rb_roaring32_binary_op_bool(self, other, roaring_bitmap_equals);
+    return RBOOL(roaring_bitmap_equals(get_bitmap(self), get_bitmap(other)));
 }
 
 // Check if `self` is a strict subset of `other`, which may be a Bitmap32, a Range, or any Enumerable of Integers.
@@ -768,11 +768,11 @@ static VALUE rb_roaring32_gte(VALUE self, VALUE other)
     return rb_roaring32_pred(self, other, &rb_roaring32_superset_pred);
 }
 
-// Checks whether `self` intersects `other`
+// Checks whether `self` shares any element with `other`, which may be a Bitmap32, a Range, or any Enumerable of Integers.
 // @return [Boolean] `true` if `self` intersects `other`, otherwise `false`
 static VALUE rb_roaring32_intersect_p(VALUE self, VALUE other)
 {
-    return rb_roaring32_binary_op_bool(self, other, roaring_bitmap_intersect);
+    return rb_roaring32_pred(self, other, &rb_roaring32_intersect_pred);
 }
 
 void
