@@ -455,16 +455,6 @@ static VALUE rb_roaring32_binary_op(VALUE self, VALUE other, binary_func func) {
     return rb_roaring32_wrap(rb_obj_class(self), result);
 }
 
-typedef void binary_func_inplace(roaring_bitmap_t *, const roaring_bitmap_t *);
-static VALUE rb_roaring32_binary_op_inplace(VALUE self, VALUE other, binary_func_inplace func) {
-    roaring_bitmap_t *self_data = get_mutable_bitmap(self);
-    roaring_bitmap_t *other_data = get_bitmap(other);
-
-    func(self_data, other_data);
-
-    return self;
-}
-
 typedef bool binary_func_bool(const roaring_bitmap_t *, const roaring_bitmap_t *);
 static VALUE rb_roaring32_binary_op_bool(VALUE self, VALUE other, binary_func_bool func) {
     roaring_bitmap_t *self_data = get_bitmap(self);
@@ -481,13 +471,6 @@ static VALUE rb_roaring32_binary_op_cardinality(VALUE self, VALUE other, binary_
 
     uint64_t result = func(self_data, other_data);
     return ULL2NUM(result);
-}
-
-// Inplace version of {and}
-// @return [self] the modified Bitmap
-static VALUE rb_roaring32_and_inplace(VALUE self, VALUE other)
-{
-    return rb_roaring32_binary_op_inplace(self, other, roaring_bitmap_and_inplace);
 }
 
 static bool rb_roaring32_range_bounds(VALUE range, uint32_t *min, uint32_t *max)
@@ -535,6 +518,16 @@ static const struct rb_roaring32_op rb_roaring32_xor_op = {
     roaring_bitmap_xor, roaring_bitmap_xor_inplace, rb_roaring32_flip_range_closed
 };
 
+static void rb_roaring32_keep_range_closed(roaring_bitmap_t *r, uint32_t min, uint32_t max)
+{
+    if (min > 0) roaring_bitmap_remove_range_closed(r, 0, min - 1);
+    if (max < UINT32_MAX) roaring_bitmap_remove_range_closed(r, max + 1, UINT32_MAX);
+}
+
+static const struct rb_roaring32_op rb_roaring32_and_op = {
+    roaring_bitmap_and, roaring_bitmap_and_inplace, rb_roaring32_keep_range_closed
+};
+
 // Applies `op` to `self`, where `other` may be a Bitmap32, a Range, or any Enumerable of Integers
 static VALUE rb_roaring32_op_inplace(VALUE self, VALUE other, const struct rb_roaring32_op *op)
 {
@@ -546,6 +539,10 @@ static VALUE rb_roaring32_op_inplace(VALUE self, VALUE other, const struct rb_ro
     } else if (rb_obj_is_kind_of(other, rb_cRange)) {
         if (rb_roaring32_range_bounds(other, &min, &max)) {
             op->range_inplace(self_data, min, max);
+        } else {
+            roaring_bitmap_t empty;
+            roaring_bitmap_init_cleared(&empty);
+            op->inplace(self_data, &empty);
         }
     } else if (rb_respond_to(other, id_each)) {
         // Collect into a temporary first so a bad element leaves the bitmap untouched
@@ -570,6 +567,13 @@ static VALUE rb_roaring32_op(VALUE self, VALUE other, const struct rb_roaring32_
     return rb_roaring32_op_inplace(copy, other, op);
 }
 
+// Inplace version of {and}. `other` may be a Bitmap32, a Range, or any Enumerable of Integers.
+// @return [self] the modified Bitmap
+static VALUE rb_roaring32_and_inplace(VALUE self, VALUE other)
+{
+    return rb_roaring32_op_inplace(self, other, &rb_roaring32_and_op);
+}
+
 // Inplace version of {or}. `other` may be a Bitmap32, a Range, or any Enumerable of Integers.
 // @return [self] the modified Bitmap
 static VALUE rb_roaring32_or_inplace(VALUE self, VALUE other)
@@ -591,11 +595,11 @@ static VALUE rb_roaring32_andnot_inplace(VALUE self, VALUE other)
     return rb_roaring32_op_inplace(self, other, &rb_roaring32_andnot_op);
 }
 
-// Computes the intersection between two bitmaps
+// Computes the intersection of `self` and `other`, which may be a Bitmap32, a Range, or any Enumerable of Integers.
 // @return [Bitmap32] a new bitmap containing all elements in both `self` and `other`
 static VALUE rb_roaring32_and(VALUE self, VALUE other)
 {
-    return rb_roaring32_binary_op(self, other, roaring_bitmap_and);
+    return rb_roaring32_op(self, other, &rb_roaring32_and_op);
 }
 
 // Computes the union of `self` and `other`, which may be a Bitmap32, a Range, or any Enumerable of Integers.

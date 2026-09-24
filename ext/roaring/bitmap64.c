@@ -442,16 +442,6 @@ static VALUE rb_roaring64_binary_op(VALUE self, VALUE other, binary_func func) {
     return rb_roaring64_wrap(rb_obj_class(self), result);
 }
 
-typedef void binary_func_inplace(roaring64_bitmap_t *, const roaring64_bitmap_t *);
-static VALUE rb_roaring64_binary_op_inplace(VALUE self, VALUE other, binary_func_inplace func) {
-    roaring64_bitmap_t *self_data = get_mutable_bitmap(self);
-    roaring64_bitmap_t *other_data = get_bitmap(other);
-
-    func(self_data, other_data);
-
-    return self;
-}
-
 typedef bool binary_func_bool(const roaring64_bitmap_t *, const roaring64_bitmap_t *);
 static VALUE rb_roaring64_binary_op_bool(VALUE self, VALUE other, binary_func_bool func) {
     roaring64_bitmap_t *self_data = get_bitmap(self);
@@ -468,11 +458,6 @@ static VALUE rb_roaring64_binary_op_cardinality(VALUE self, VALUE other, binary_
 
     uint64_t result = func(self_data, other_data);
     return ULL2NUM(result);
-}
-
-static VALUE rb_roaring64_and_inplace(VALUE self, VALUE other)
-{
-    return rb_roaring64_binary_op_inplace(self, other, roaring64_bitmap_and_inplace);
 }
 
 struct rb_roaring64_add_each_args {
@@ -505,6 +490,16 @@ static const struct rb_roaring64_op rb_roaring64_xor_op = {
     roaring64_bitmap_xor, roaring64_bitmap_xor_inplace, roaring64_bitmap_flip_closed_inplace
 };
 
+static void rb_roaring64_keep_range_closed(roaring64_bitmap_t *r, uint64_t min, uint64_t max)
+{
+    if (min > 0) roaring64_bitmap_remove_range_closed(r, 0, min - 1);
+    if (max < UINT64_MAX) roaring64_bitmap_remove_range_closed(r, max + 1, UINT64_MAX);
+}
+
+static const struct rb_roaring64_op rb_roaring64_and_op = {
+    roaring64_bitmap_and, roaring64_bitmap_and_inplace, rb_roaring64_keep_range_closed
+};
+
 static VALUE rb_roaring64_op_inplace(VALUE self, VALUE other, const struct rb_roaring64_op *op)
 {
     roaring64_bitmap_t *self_data = get_mutable_bitmap(self);
@@ -515,6 +510,10 @@ static VALUE rb_roaring64_op_inplace(VALUE self, VALUE other, const struct rb_ro
     } else if (rb_obj_is_kind_of(other, rb_cRange)) {
         if (roaring_ruby_range_bounds(other, UINT64_MAX, &min, &max)) {
             op->range_inplace(self_data, min, max);
+        } else {
+            roaring64_bitmap_t *empty = roaring64_bitmap_create();
+            op->inplace(self_data, empty);
+            roaring64_bitmap_free(empty);
         }
     } else if (rb_respond_to(other, id_each)) {
         // Collect into a temporary first so a bad element leaves the bitmap untouched
@@ -538,6 +537,11 @@ static VALUE rb_roaring64_op(VALUE self, VALUE other, const struct rb_roaring64_
     return rb_roaring64_op_inplace(copy, other, op);
 }
 
+static VALUE rb_roaring64_and_inplace(VALUE self, VALUE other)
+{
+    return rb_roaring64_op_inplace(self, other, &rb_roaring64_and_op);
+}
+
 // Inplace version of {or}. `other` may be a Bitmap64, a Range, or any Enumerable of Integers.
 // @return [self] the modified Bitmap
 static VALUE rb_roaring64_or_inplace(VALUE self, VALUE other)
@@ -557,7 +561,7 @@ static VALUE rb_roaring64_andnot_inplace(VALUE self, VALUE other)
 
 static VALUE rb_roaring64_and(VALUE self, VALUE other)
 {
-    return rb_roaring64_binary_op(self, other, roaring64_bitmap_and);
+    return rb_roaring64_op(self, other, &rb_roaring64_and_op);
 }
 
 static VALUE rb_roaring64_or(VALUE self, VALUE other)
