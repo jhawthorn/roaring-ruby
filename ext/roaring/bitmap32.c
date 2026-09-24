@@ -3,6 +3,7 @@
 #include <stdio.h>
 
 static VALUE cRoaringBitmap32;
+static ID id_each;
 
 typedef struct {
     roaring_bitmap_t *bitmap;
@@ -489,19 +490,51 @@ static VALUE rb_roaring32_and_inplace(VALUE self, VALUE other)
     return rb_roaring32_binary_op_inplace(self, other, roaring_bitmap_and_inplace);
 }
 
-// Inplace version of {or}. `other` may be a Range of Integers.
+static bool rb_roaring32_range_bounds(VALUE range, uint32_t *min, uint32_t *max)
+{
+    uint64_t lo, hi;
+    if (!roaring_ruby_range_bounds(range, UINT32_MAX, &lo, &hi)) return false;
+    *min = (uint32_t)lo;
+    *max = (uint32_t)hi;
+    return true;
+}
+
+struct rb_roaring32_add_each_args {
+    roaring_bitmap_t *bitmap;
+    roaring_bulk_context_t context;
+};
+
+static VALUE rb_roaring32_add_i(RB_BLOCK_CALL_FUNC_ARGLIST(val, arg))
+{
+    struct rb_roaring32_add_each_args *args = (void *)arg;
+    roaring_bitmap_add_bulk(args->bitmap, &args->context, NUM2UINT32(val));
+    return Qnil;
+}
+
+// Inplace version of {or}. `other` may be a Bitmap32, a Range, or any Enumerable of Integers.
 // @return [self] the modified Bitmap
 static VALUE rb_roaring32_or_inplace(VALUE self, VALUE other)
 {
-    if (rb_obj_is_kind_of(other, rb_cRange)) {
-        roaring_bitmap_t *data = get_mutable_bitmap(self);
-        uint64_t min, max;
-        if (roaring_ruby_range_bounds(other, UINT32_MAX, &min, &max)) {
-            roaring_bitmap_add_range_closed(data, (uint32_t)min, (uint32_t)max);
+    roaring_bitmap_t *self_data = get_mutable_bitmap(self);
+    uint32_t min, max;
+
+    if (rb_typeddata_is_kind_of(other, &roaring_type)) {
+        roaring_bitmap_or_inplace(self_data, get_bitmap(other));
+    } else if (rb_obj_is_kind_of(other, rb_cRange)) {
+        if (rb_roaring32_range_bounds(other, &min, &max)) {
+            roaring_bitmap_add_range_closed(self_data, min, max);
         }
-        return self;
+    } else if (rb_respond_to(other, id_each)) {
+        // Collect into a temporary first so a bad element leaves the bitmap untouched
+        VALUE tmp = rb_roaring32_alloc(cRoaringBitmap32);
+        struct rb_roaring32_add_each_args args = { get_bitmap(tmp), {0} };
+        rb_block_call(other, id_each, 0, NULL, rb_roaring32_add_i, (VALUE)&args);
+        roaring_bitmap_or_inplace(self_data, args.bitmap);
+        RB_GC_GUARD(tmp);
+    } else {
+        rb_raise(rb_eTypeError, "wrong argument type %s (expected Roaring::Bitmap32, Range or Enumerable)", rb_obj_classname(other));
     }
-    return rb_roaring32_binary_op_inplace(self, other, roaring_bitmap_or_inplace);
+    return self;
 }
 
 // Inplace version of {xor}
@@ -525,15 +558,15 @@ static VALUE rb_roaring32_and(VALUE self, VALUE other)
     return rb_roaring32_binary_op(self, other, roaring_bitmap_and);
 }
 
-// Computes the union between two bitmaps. `other` may be a Range of Integers.
+// Computes the union of `self` and `other`, which may be a Bitmap32, a Range, or any Enumerable of Integers.
 // @return [Bitmap32] a new bitmap containing all elements in either `self` or `other`
 static VALUE rb_roaring32_or(VALUE self, VALUE other)
 {
-    if (rb_obj_is_kind_of(other, rb_cRange)) {
-        VALUE copy = rb_roaring32_wrap(rb_obj_class(self), roaring_bitmap_copy(get_bitmap(self)));
-        return rb_roaring32_or_inplace(copy, other);
+    if (rb_typeddata_is_kind_of(other, &roaring_type)) {
+        return rb_roaring32_binary_op(self, other, roaring_bitmap_or);
     }
-    return rb_roaring32_binary_op(self, other, roaring_bitmap_or);
+    VALUE copy = rb_roaring32_wrap(rb_obj_class(self), roaring_bitmap_copy(get_bitmap(self)));
+    return rb_roaring32_or_inplace(copy, other);
 }
 
 // Computes the exclusive or between two bitmaps
@@ -616,6 +649,7 @@ static VALUE rb_roaring32_intersect_p(VALUE self, VALUE other)
 void
 rb_roaring32_init(void)
 {
+  id_each = rb_intern("each");
   cRoaringBitmap32 = rb_define_class_under(rb_mRoaring, "Bitmap32", rb_cRoaringBitmap);
   rb_define_alloc_func(cRoaringBitmap32, rb_roaring32_alloc);
   rb_define_method(cRoaringBitmap32, "replace", rb_roaring32_replace, 1);

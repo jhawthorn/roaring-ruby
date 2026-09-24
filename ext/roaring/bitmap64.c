@@ -3,6 +3,7 @@
 #include <stdio.h>
 
 static VALUE cRoaringBitmap64;
+static ID id_each;
 
 typedef struct {
     roaring64_bitmap_t *bitmap;
@@ -474,17 +475,42 @@ static VALUE rb_roaring64_and_inplace(VALUE self, VALUE other)
     return rb_roaring64_binary_op_inplace(self, other, roaring64_bitmap_and_inplace);
 }
 
+struct rb_roaring64_add_each_args {
+    roaring64_bitmap_t *bitmap;
+    roaring64_bulk_context_t context;
+};
+
+static VALUE rb_roaring64_add_i(RB_BLOCK_CALL_FUNC_ARGLIST(val, arg))
+{
+    struct rb_roaring64_add_each_args *args = (void *)arg;
+    roaring64_bitmap_add_bulk(args->bitmap, &args->context, NUM2UINT64(val));
+    return Qnil;
+}
+
+// Inplace version of {or}. `other` may be a Bitmap64, a Range, or any Enumerable of Integers.
+// @return [self] the modified Bitmap
 static VALUE rb_roaring64_or_inplace(VALUE self, VALUE other)
 {
-    if (rb_obj_is_kind_of(other, rb_cRange)) {
-        roaring64_bitmap_t *data = get_mutable_bitmap(self);
-        uint64_t min, max;
+    roaring64_bitmap_t *self_data = get_mutable_bitmap(self);
+    uint64_t min, max;
+
+    if (rb_typeddata_is_kind_of(other, &roaring64_type)) {
+        roaring64_bitmap_or_inplace(self_data, get_bitmap(other));
+    } else if (rb_obj_is_kind_of(other, rb_cRange)) {
         if (roaring_ruby_range_bounds(other, UINT64_MAX, &min, &max)) {
-            roaring64_bitmap_add_range_closed(data, min, max);
+            roaring64_bitmap_add_range_closed(self_data, min, max);
         }
-        return self;
+    } else if (rb_respond_to(other, id_each)) {
+        // Collect into a temporary first so a bad element leaves the bitmap untouched
+        VALUE tmp = rb_roaring64_alloc(cRoaringBitmap64);
+        struct rb_roaring64_add_each_args args = { get_bitmap(tmp), {0} };
+        rb_block_call(other, id_each, 0, NULL, rb_roaring64_add_i, (VALUE)&args);
+        roaring64_bitmap_or_inplace(self_data, args.bitmap);
+        RB_GC_GUARD(tmp);
+    } else {
+        rb_raise(rb_eTypeError, "wrong argument type %s (expected Roaring::Bitmap64, Range or Enumerable)", rb_obj_classname(other));
     }
-    return rb_roaring64_binary_op_inplace(self, other, roaring64_bitmap_or_inplace);
+    return self;
 }
 
 static VALUE rb_roaring64_xor_inplace(VALUE self, VALUE other)
@@ -504,11 +530,11 @@ static VALUE rb_roaring64_and(VALUE self, VALUE other)
 
 static VALUE rb_roaring64_or(VALUE self, VALUE other)
 {
-    if (rb_obj_is_kind_of(other, rb_cRange)) {
-        VALUE copy = rb_roaring64_wrap(rb_obj_class(self), roaring64_bitmap_copy(get_bitmap(self)));
-        return rb_roaring64_or_inplace(copy, other);
+    if (rb_typeddata_is_kind_of(other, &roaring64_type)) {
+        return rb_roaring64_binary_op(self, other, roaring64_bitmap_or);
     }
-    return rb_roaring64_binary_op(self, other, roaring64_bitmap_or);
+    VALUE copy = rb_roaring64_wrap(rb_obj_class(self), roaring64_bitmap_copy(get_bitmap(self)));
+    return rb_roaring64_or_inplace(copy, other);
 }
 
 static VALUE rb_roaring64_xor(VALUE self, VALUE other)
@@ -567,6 +593,7 @@ static VALUE rb_roaring64_intersect_p(VALUE self, VALUE other)
 void
 rb_roaring64_init(void)
 {
+  id_each = rb_intern("each");
   cRoaringBitmap64 = rb_define_class_under(rb_mRoaring, "Bitmap64", rb_cRoaringBitmap);
   rb_define_alloc_func(cRoaringBitmap64, rb_roaring64_alloc);
   rb_define_method(cRoaringBitmap64, "replace", rb_roaring64_replace, 1);

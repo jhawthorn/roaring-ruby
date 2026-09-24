@@ -89,15 +89,7 @@ module Roaring
     include Enumerable
 
     def initialize(enum = nil)
-      return unless enum
-
-      if Bitmap === enum
-        replace(enum)
-      elsif Range === enum
-        or!(enum)
-      else
-        enum.each { |x| self << x }
-      end
+      or!(enum) if enum
     end
 
     def initialize_copy(other)

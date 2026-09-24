@@ -365,6 +365,24 @@ module BitmapTests
     assert_raises(TypeError) { r1 | ("a".."b") }
   end
 
+  def test_or_with_enumerable
+    r1 = bitmap_class[1, 2]
+    result = r1 | [4, 3]
+    refute_same r1, result
+    assert_equal [1, 2, 3, 4], result.to_a
+    assert_equal [1, 2, 3], (r1 | Set[3]).to_a
+    assert_equal [1, 2, 5], (r1 | other_bitmap_class[5]).to_a
+    assert_equal [1, 2], r1.to_a
+
+    frozen = bitmap_class[1].freeze
+    result = frozen | [2]
+    refute_predicate result, :frozen?
+    assert_equal [1, 2], result.to_a
+
+    assert_raises(RangeError) { r1 | [-1] }
+    assert_raises(TypeError) { r1 | 1 }
+  end
+
   def test_xor
     r1 = bitmap_class[1, 2, 3, 4]
     r2 = bitmap_class[3, 4, 5, 6]
@@ -465,11 +483,39 @@ module BitmapTests
     assert_raises(RangeError) { bitmap.or!(0..-1) }
     assert_raises(TypeError) { bitmap.or!("a".."b") }
     assert_raises(TypeError) { bitmap.or!(0..1.5) }
-    assert_raises(TypeError) { bitmap.or!((1..10) % 3) }
     assert_equal [7], bitmap.to_a
 
     assert_raises(FrozenError) { bitmap_class[1].freeze.or!(0..3) }
     assert_raises(RuntimeError) { bitmap.each { bitmap.or!(0..3) } }
+    assert_equal [7], bitmap.to_a
+  end
+
+  def test_or_inplace_with_enumerable
+    max = bitmap_class::MAX
+
+    bitmap = bitmap_class[1]
+    assert_same bitmap, bitmap.or!([3, 2, 3, max])
+    assert_equal [1, 2, 3, max], bitmap.to_a
+    assert_equal [1, 2, 3], bitmap_class[1].or!(Set[3, 2]).to_a
+    assert_equal [1, 4, 7, 10], bitmap_class.new.or!((1..10) % 3).to_a
+    assert_equal [1, 2, 3], bitmap_class[1].or!([2, 3].each).to_a
+    assert_equal [1, 5], bitmap_class[1].or!(other_bitmap_class[5]).to_a
+    assert_equal [1], bitmap_class[1].or!([]).to_a
+    assert_equal [1], bitmap_class[1].or!(Set[]).to_a
+
+    bitmap = bitmap_class[7]
+    assert_raises(RangeError) { bitmap.or!([1, -1]) }
+    assert_raises(RangeError) { bitmap.or!([1, max + 1]) }
+    assert_raises(TypeError) { bitmap.or!([1, "a"]) }
+    assert_raises(TypeError) { bitmap.or!([1, 1.5]) }
+    assert_raises(TypeError) { bitmap.or!(Set[1, "a"]) }
+    assert_raises(TypeError) { bitmap.or!(1) }
+    assert_raises(TypeError) { bitmap.or!(nil) }
+    assert_raises(TypeError) { bitmap.or!({ 1 => 2 }) }
+    assert_equal [7], bitmap.to_a
+
+    assert_raises(FrozenError) { bitmap_class[1].freeze.or!([2]) }
+    assert_raises(RuntimeError) { bitmap.each { bitmap.or!([2]) } }
     assert_equal [7], bitmap.to_a
   end
 
