@@ -1052,6 +1052,26 @@ module BitmapTests
     assert_nil bitmap[9999]
   end
 
+  def test_rank
+    max = bitmap_class::MAX
+    bitmap = bitmap_class[1, 2, 99, max]
+
+    assert_equal 0, bitmap.rank(0)
+    assert_equal 1, bitmap.rank(1)
+    assert_equal 2, bitmap.rank(2)
+    assert_equal 2, bitmap.rank(98)
+    assert_equal 3, bitmap.rank(99)
+    assert_equal 3, bitmap.rank(max - 1)
+    assert_equal 4, bitmap.rank(max)
+    assert_equal 0, bitmap_class[].rank(max)
+    assert_equal 2**32, bitmap_class[0..2**32 - 1].rank(2**32 - 1)
+
+    assert_raises(RangeError) { bitmap.rank(-1) }
+    assert_raises(RangeError) { bitmap.rank(max + 1) }
+    assert_raises(TypeError) { bitmap.rank("a") }
+    assert_raises(TypeError) { bitmap.rank(nil) }
+  end
+
   def test_serialize
     original = bitmap_class[1, 2, 3, 4]
 

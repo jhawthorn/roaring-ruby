@@ -293,6 +293,13 @@ static VALUE rb_roaring32_aref(VALUE self, VALUE rankv)
     return self;
 }
 
+// Count the elements less than or equal to `val`, so that `rank(min)` is 1 and `rank(max)` is the cardinality
+// @return [Integer] the number of elements in the bitmap that are `<= val`
+static VALUE rb_roaring32_rank(VALUE self, VALUE val)
+{
+    return ULL2NUM(roaring_bitmap_rank(get_bitmap(self), NUM2UINT32(val)));
+}
+
 // @return [Integer,nil,Array<Integer>] the smallest element (or `nil`), or the first `n` elements when `n` is given
 static VALUE rb_roaring32_first(int argc, VALUE *argv, VALUE self)
 {
@@ -782,6 +789,7 @@ rb_roaring32_init(void)
   rb_define_method(cRoaringBitmap32, "reverse_each", rb_roaring32_reverse_each, 0);
   rb_define_method(cRoaringBitmap32, "each_from", rb_roaring32_each_from, 1);
   rb_define_method(cRoaringBitmap32, "[]", rb_roaring32_aref, 1);
+  rb_define_method(cRoaringBitmap32, "rank", rb_roaring32_rank, 1);
 
   rb_define_method(cRoaringBitmap32, "and!", rb_roaring32_and_inplace, 1);
   rb_define_method(cRoaringBitmap32, "or!", rb_roaring32_or_inplace, 1);

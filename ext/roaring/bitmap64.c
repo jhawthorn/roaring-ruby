@@ -291,6 +291,11 @@ static VALUE rb_roaring64_aref(VALUE self, VALUE rankv)
     return self;
 }
 
+static VALUE rb_roaring64_rank(VALUE self, VALUE val)
+{
+    return ULL2NUM(roaring64_bitmap_rank(get_bitmap(self), NUM2UINT64(val)));
+}
+
 static VALUE rb_roaring64_first(int argc, VALUE *argv, VALUE self)
 {
     rb_check_arity(argc, 0, 1);
@@ -710,6 +715,7 @@ rb_roaring64_init(void)
   rb_define_method(cRoaringBitmap64, "reverse_each", rb_roaring64_reverse_each, 0);
   rb_define_method(cRoaringBitmap64, "each_from", rb_roaring64_each_from, 1);
   rb_define_method(cRoaringBitmap64, "[]", rb_roaring64_aref, 1);
+  rb_define_method(cRoaringBitmap64, "rank", rb_roaring64_rank, 1);
 
   rb_define_method(cRoaringBitmap64, "and!", rb_roaring64_and_inplace, 1);
   rb_define_method(cRoaringBitmap64, "or!", rb_roaring64_or_inplace, 1);
