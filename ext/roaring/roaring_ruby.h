@@ -9,6 +9,10 @@
 #define RBOOL(x) ((x) ? Qtrue : Qfalse)
 #endif
 
+#ifndef RUBY_TYPED_EMBEDDABLE
+#define RUBY_TYPED_EMBEDDABLE 0
+#endif
+
 extern VALUE rb_mRoaring;
 extern VALUE rb_cRoaringBitmap;
 
