@@ -550,6 +550,40 @@ static VALUE rb_roaring64_op(VALUE self, VALUE other, const struct rb_roaring64_
     return rb_roaring64_wrap(rb_obj_class(self), result);
 }
 
+struct rb_roaring64_pred {
+    bool (*func)(const roaring64_bitmap_t *, const roaring64_bitmap_t *);
+    bool (*range)(const roaring64_bitmap_t *, uint64_t, uint64_t);
+};
+
+static VALUE rb_roaring64_pred(VALUE self, VALUE other, const struct rb_roaring64_pred *pred)
+{
+    roaring64_bitmap_t *self_data = get_bitmap(self);
+    struct rb_roaring64_operand o;
+    rb_roaring64_operand(other, &o);
+
+    bool result = o.bitmap ? pred->func(self_data, o.bitmap) : pred->range(self_data, o.min, o.max);
+    RB_GC_GUARD(o.tmp);
+    return RBOOL(result);
+}
+
+static bool rb_roaring64_within_range_closed(const roaring64_bitmap_t *r, uint64_t min, uint64_t max)
+{
+    return roaring64_bitmap_is_empty(r) || (roaring64_bitmap_minimum(r) >= min && roaring64_bitmap_maximum(r) <= max);
+}
+
+static bool rb_roaring64_strictly_within_range_closed(const roaring64_bitmap_t *r, uint64_t min, uint64_t max)
+{
+    return rb_roaring64_within_range_closed(r, min, max) && roaring64_bitmap_get_cardinality(r) <= max - min;
+}
+
+static const struct rb_roaring64_pred rb_roaring64_subset_pred = {
+    roaring64_bitmap_is_subset, rb_roaring64_within_range_closed
+};
+
+static const struct rb_roaring64_pred rb_roaring64_strict_subset_pred = {
+    roaring64_bitmap_is_strict_subset, rb_roaring64_strictly_within_range_closed
+};
+
 static VALUE rb_roaring64_and_inplace(VALUE self, VALUE other)
 {
     return rb_roaring64_op_inplace(self, other, &rb_roaring64_and_op);
@@ -622,12 +656,12 @@ static VALUE rb_roaring64_eq(VALUE self, VALUE other)
 
 static VALUE rb_roaring64_lt(VALUE self, VALUE other)
 {
-    return rb_roaring64_binary_op_bool(self, other, roaring64_bitmap_is_strict_subset);
+    return rb_roaring64_pred(self, other, &rb_roaring64_strict_subset_pred);
 }
 
 static VALUE rb_roaring64_lte(VALUE self, VALUE other)
 {
-    return rb_roaring64_binary_op_bool(self, other, roaring64_bitmap_is_subset);
+    return rb_roaring64_pred(self, other, &rb_roaring64_subset_pred);
 }
 
 static VALUE rb_roaring64_intersect_p(VALUE self, VALUE other)

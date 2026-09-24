@@ -580,6 +580,41 @@ static VALUE rb_roaring32_op(VALUE self, VALUE other, const struct rb_roaring32_
     return rb_roaring32_wrap(rb_obj_class(self), result);
 }
 
+// A predicate over two bitmaps and the equivalent against a closed range of values
+struct rb_roaring32_pred {
+    bool (*func)(const roaring_bitmap_t *, const roaring_bitmap_t *);
+    bool (*range)(const roaring_bitmap_t *, uint32_t, uint32_t);
+};
+
+static VALUE rb_roaring32_pred(VALUE self, VALUE other, const struct rb_roaring32_pred *pred)
+{
+    roaring_bitmap_t *self_data = get_bitmap(self);
+    struct rb_roaring32_operand o;
+    rb_roaring32_operand(other, &o);
+
+    bool result = o.bitmap ? pred->func(self_data, o.bitmap) : pred->range(self_data, o.min, o.max);
+    RB_GC_GUARD(o.tmp);
+    return RBOOL(result);
+}
+
+static bool rb_roaring32_within_range_closed(const roaring_bitmap_t *r, uint32_t min, uint32_t max)
+{
+    return roaring_bitmap_is_empty(r) || (roaring_bitmap_minimum(r) >= min && roaring_bitmap_maximum(r) <= max);
+}
+
+static bool rb_roaring32_strictly_within_range_closed(const roaring_bitmap_t *r, uint32_t min, uint32_t max)
+{
+    return rb_roaring32_within_range_closed(r, min, max) && roaring_bitmap_get_cardinality(r) <= (uint64_t)max - min;
+}
+
+static const struct rb_roaring32_pred rb_roaring32_subset_pred = {
+    roaring_bitmap_is_subset, rb_roaring32_within_range_closed
+};
+
+static const struct rb_roaring32_pred rb_roaring32_strict_subset_pred = {
+    roaring_bitmap_is_strict_subset, rb_roaring32_strictly_within_range_closed
+};
+
 // Inplace version of {and}. `other` may be a Bitmap32, a Range, or any Enumerable of Integers.
 // @return [self] the modified Bitmap
 static VALUE rb_roaring32_and_inplace(VALUE self, VALUE other)
@@ -678,18 +713,20 @@ static VALUE rb_roaring32_eq(VALUE self, VALUE other)
     return rb_roaring32_binary_op_bool(self, other, roaring_bitmap_equals);
 }
 
-// Check if `self` is a strict subset of `other`. A strict subset requires every element in `self` is also in `other`, but they aren't exactly equal.
+// Check if `self` is a strict subset of `other`, which may be a Bitmap32, a Range, or any Enumerable of Integers.
+// A strict subset requires every element in `self` is also in `other`, but they aren't exactly equal.
 // @return [Boolean] `true` if `self` is a strict subset of `other`, otherwise `false`
 static VALUE rb_roaring32_lt(VALUE self, VALUE other)
 {
-    return rb_roaring32_binary_op_bool(self, other, roaring_bitmap_is_strict_subset);
+    return rb_roaring32_pred(self, other, &rb_roaring32_strict_subset_pred);
 }
 
-// Check if `self` is a (non-strict) subset of `other`. A subset requires that every element in `self` is also in `other`. They may be equal.
+// Check if `self` is a (non-strict) subset of `other`, which may be a Bitmap32, a Range, or any Enumerable of Integers.
+// A subset requires that every element in `self` is also in `other`. They may be equal.
 // @return [Boolean] `true` if `self` is a subset of `other`, otherwise `false`
 static VALUE rb_roaring32_lte(VALUE self, VALUE other)
 {
-    return rb_roaring32_binary_op_bool(self, other, roaring_bitmap_is_subset);
+    return rb_roaring32_pred(self, other, &rb_roaring32_subset_pred);
 }
 
 // Checks whether `self` intersects `other`
