@@ -31,6 +31,8 @@ module Roaring
     #   @!parse alias_method :union, :or
     #   @!parse alias_method :intersection, :and
     #   @!parse alias_method :difference, :andnot
+    #   @!parse alias_method :merge, :or!
+    #   @!parse alias_method :subtract, :andnot!
     #
     #   @!parse alias_method :delete, :remove
     #   @!parse alias_method :delete?, :remove?
@@ -59,6 +61,8 @@ module Roaring
       alias_method :union, :or
       alias_method :intersection, :and
       alias_method :difference, :andnot
+      alias_method :merge, :or!
+      alias_method :subtract, :andnot!
 
       alias_method :delete, :remove
       alias_method :delete?, :remove?

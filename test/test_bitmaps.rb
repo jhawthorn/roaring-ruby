@@ -790,6 +790,10 @@ module BitmapTests
     result = r1.or!(r2)
     assert_same r1, result
     assert_equal [1, 2, 3, 4, 5, 6], result.to_a
+
+    r1 = bitmap_class[1, 2]
+    assert_same r1, r1.merge([3, 4])
+    assert_equal [1, 2, 3, 4], r1.to_a
   end
 
   def test_or_inplace_with_range
@@ -950,6 +954,10 @@ module BitmapTests
     result = r1.andnot!(r2)
     assert_same r1, result
     assert_equal [1, 2], result.to_a
+
+    r1 = bitmap_class[1, 2, 3, 4]
+    assert_same r1, r1.subtract(3..)
+    assert_equal [1, 2], r1.to_a
   end
 
   def test_difference_inplace_with_range
