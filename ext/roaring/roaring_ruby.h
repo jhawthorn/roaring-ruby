@@ -37,6 +37,33 @@ NUM2UINT64(VALUE num) {
     return NUM2ULL(num);
 }
 
+// Converts a Range to closed bounds within [0, limit]. Returns false when the range is empty.
+static inline bool
+roaring_ruby_range_bounds(VALUE range, uint64_t limit, uint64_t *min, uint64_t *max)
+{
+    VALUE beg, end;
+    int excl;
+    rb_range_values(range, &beg, &end, &excl);
+
+    uint64_t lo = NIL_P(beg) ? 0 : NUM2UINT64(beg);
+    uint64_t hi = limit;
+    if (!NIL_P(end)) {
+        hi = NUM2UINT64(end);
+        if (excl) {
+            if (hi == 0) return false;
+            hi--;
+        }
+    }
+    if (lo > hi) return false;
+    if (hi > limit) {
+        rb_raise(rb_eRangeError, "Integer %"PRIu64" too big to use with Roaring::Bitmap", hi);
+    }
+
+    *min = lo;
+    *max = hi;
+    return true;
+}
+
 void rb_roaring32_init();
 void rb_roaring64_init();
 

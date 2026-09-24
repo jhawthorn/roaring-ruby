@@ -489,10 +489,18 @@ static VALUE rb_roaring32_and_inplace(VALUE self, VALUE other)
     return rb_roaring32_binary_op_inplace(self, other, roaring_bitmap_and_inplace);
 }
 
-// Inplace version of {or}
+// Inplace version of {or}. `other` may be a Range of Integers.
 // @return [self] the modified Bitmap
 static VALUE rb_roaring32_or_inplace(VALUE self, VALUE other)
 {
+    if (rb_obj_is_kind_of(other, rb_cRange)) {
+        roaring_bitmap_t *data = get_mutable_bitmap(self);
+        uint64_t min, max;
+        if (roaring_ruby_range_bounds(other, UINT32_MAX, &min, &max)) {
+            roaring_bitmap_add_range_closed(data, (uint32_t)min, (uint32_t)max);
+        }
+        return self;
+    }
     return rb_roaring32_binary_op_inplace(self, other, roaring_bitmap_or_inplace);
 }
 

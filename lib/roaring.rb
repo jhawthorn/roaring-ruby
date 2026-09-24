@@ -94,11 +94,7 @@ module Roaring
       if Bitmap === enum
         replace(enum)
       elsif Range === enum
-        if enum.exclude_end?
-          add_range(enum.begin, enum.end)
-        else
-          add_range_closed(enum.begin, enum.end)
-        end
+        or!(enum)
       else
         enum.each { |x| self << x }
       end

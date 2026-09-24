@@ -409,6 +409,51 @@ module BitmapTests
     assert_equal [1, 2, 3, 4, 5, 6], result.to_a
   end
 
+  def test_or_inplace_with_range
+    max = bitmap_class::MAX
+
+    bitmap = bitmap_class[1, 2]
+    assert_same bitmap, bitmap.or!(0...1000)
+    assert_equal (0...1000).to_a, bitmap.to_a
+
+    assert_equal (0..1000).to_a, bitmap_class[1, 2].or!(0..1000).to_a
+    assert_equal (0..5).to_a, bitmap_class.new.or!(..5).to_a
+    assert_equal (0...5).to_a, bitmap_class.new.or!(...5).to_a
+
+    bitmap = bitmap_class.new.or!(max - 10..)
+    assert_equal 11, bitmap.size
+    assert_equal max, bitmap.max
+    assert_equal max - 10, bitmap.min
+    assert_equal [max], bitmap_class.new.or!(max..max).to_a
+    assert_equal 2**32, bitmap_class.new.or!(0...2**32).size
+
+    assert_equal [7], bitmap_class[7].or!(0...0).to_a
+    assert_equal [0, 7], bitmap_class[7].or!(0..0).to_a
+    assert_equal [7], bitmap_class[7].or!(5...5).to_a
+    assert_equal [5, 7], bitmap_class[7].or!(5..5).to_a
+    assert_equal [5, 7], bitmap_class[7].or!(5...6).to_a
+    assert_equal [5, 6, 7], bitmap_class[7].or!(5..6).to_a
+    assert_equal [7], bitmap_class[7].or!(5..3).to_a
+    assert_equal [7], bitmap_class[7].or!(5...3).to_a
+    assert_equal [7], bitmap_class[7].or!(max...max).to_a
+    assert_equal [7, max], bitmap_class[7].or!(max..max).to_a
+
+    bitmap = bitmap_class[7]
+
+    assert_raises(RangeError) { bitmap.or!(max..max + 1) }
+    assert_raises(RangeError) { bitmap.or!(0...max + 2) }
+    assert_raises(RangeError) { bitmap.or!(-1..3) }
+    assert_raises(RangeError) { bitmap.or!(0..-1) }
+    assert_raises(TypeError) { bitmap.or!("a".."b") }
+    assert_raises(TypeError) { bitmap.or!(0..1.5) }
+    assert_raises(TypeError) { bitmap.or!((1..10) % 3) }
+    assert_equal [7], bitmap.to_a
+
+    assert_raises(FrozenError) { bitmap_class[1].freeze.or!(0..3) }
+    assert_raises(RuntimeError) { bitmap.each { bitmap.or!(0..3) } }
+    assert_equal [7], bitmap.to_a
+  end
+
   def test_xor_inplace
     r1 = bitmap_class[1, 2, 3, 4]
     r2 = bitmap_class[3, 4, 5, 6]

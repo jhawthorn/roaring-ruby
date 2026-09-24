@@ -476,6 +476,14 @@ static VALUE rb_roaring64_and_inplace(VALUE self, VALUE other)
 
 static VALUE rb_roaring64_or_inplace(VALUE self, VALUE other)
 {
+    if (rb_obj_is_kind_of(other, rb_cRange)) {
+        roaring64_bitmap_t *data = get_mutable_bitmap(self);
+        uint64_t min, max;
+        if (roaring_ruby_range_bounds(other, UINT64_MAX, &min, &max)) {
+            roaring64_bitmap_add_range_closed(data, min, max);
+        }
+        return self;
+    }
     return rb_roaring64_binary_op_inplace(self, other, roaring64_bitmap_or_inplace);
 }
 
