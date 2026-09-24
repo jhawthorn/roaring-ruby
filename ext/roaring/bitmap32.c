@@ -445,16 +445,6 @@ static VALUE rb_roaring32_statistics(VALUE self)
     return ret;
 }
 
-typedef roaring_bitmap_t *binary_func(const roaring_bitmap_t *, const roaring_bitmap_t *);
-static VALUE rb_roaring32_binary_op(VALUE self, VALUE other, binary_func func) {
-    roaring_bitmap_t *self_data = get_bitmap(self);
-    roaring_bitmap_t *other_data = get_bitmap(other);
-
-    roaring_bitmap_t *result = func(self_data, other_data);
-
-    return rb_roaring32_wrap(rb_obj_class(self), result);
-}
-
 typedef bool binary_func_bool(const roaring_bitmap_t *, const roaring_bitmap_t *);
 static VALUE rb_roaring32_binary_op_bool(VALUE self, VALUE other, binary_func_bool func) {
     roaring_bitmap_t *self_data = get_bitmap(self);
@@ -528,43 +518,66 @@ static const struct rb_roaring32_op rb_roaring32_and_op = {
     roaring_bitmap_and, roaring_bitmap_and_inplace, rb_roaring32_keep_range_closed
 };
 
-// Applies `op` to `self`, where `other` may be a Bitmap32, a Range, or any Enumerable of Integers
-static VALUE rb_roaring32_op_inplace(VALUE self, VALUE other, const struct rb_roaring32_op *op)
-{
-    roaring_bitmap_t *self_data = get_mutable_bitmap(self);
+// An operand resolved to either a bitmap or a closed range of values. Callers must RB_GC_GUARD tmp.
+struct rb_roaring32_operand {
+    const roaring_bitmap_t *bitmap;
     uint32_t min, max;
+    VALUE tmp;
+};
+
+// Resolves `other`, which may be a Bitmap32, a Range, or any Enumerable of Integers
+static void rb_roaring32_operand(VALUE other, struct rb_roaring32_operand *out)
+{
+    out->bitmap = NULL;
+    out->tmp = Qnil;
 
     if (rb_typeddata_is_kind_of(other, &roaring_type)) {
-        op->inplace(self_data, get_bitmap(other));
+        out->bitmap = get_bitmap(other);
     } else if (rb_obj_is_kind_of(other, rb_cRange)) {
-        if (rb_roaring32_range_bounds(other, &min, &max)) {
-            op->range_inplace(self_data, min, max);
-        } else {
-            roaring_bitmap_t empty;
-            roaring_bitmap_init_cleared(&empty);
-            op->inplace(self_data, &empty);
+        if (!rb_roaring32_range_bounds(other, &out->min, &out->max)) {
+            out->tmp = rb_roaring32_alloc(cRoaringBitmap32);
+            out->bitmap = get_bitmap(out->tmp);
         }
     } else if (rb_respond_to(other, id_each)) {
-        // Collect into a temporary first so a bad element leaves the bitmap untouched
-        VALUE tmp = rb_roaring32_alloc(cRoaringBitmap32);
-        struct rb_roaring32_add_each_args args = { get_bitmap(tmp), {0} };
+        out->tmp = rb_roaring32_alloc(cRoaringBitmap32);
+        struct rb_roaring32_add_each_args args = { get_bitmap(out->tmp), {0} };
         rb_block_call(other, id_each, 0, NULL, rb_roaring32_add_i, (VALUE)&args);
-        op->inplace(self_data, args.bitmap);
-        RB_GC_GUARD(tmp);
+        out->bitmap = args.bitmap;
     } else {
         rb_raise(rb_eTypeError, "wrong argument type %s (expected Roaring::Bitmap32, Range or Enumerable)", rb_obj_classname(other));
     }
+}
+
+static VALUE rb_roaring32_op_inplace(VALUE self, VALUE other, const struct rb_roaring32_op *op)
+{
+    roaring_bitmap_t *self_data = get_mutable_bitmap(self);
+    struct rb_roaring32_operand o;
+    rb_roaring32_operand(other, &o);
+
+    if (o.bitmap) {
+        op->inplace(self_data, o.bitmap);
+    } else {
+        op->range_inplace(self_data, o.min, o.max);
+    }
+    RB_GC_GUARD(o.tmp);
     return self;
 }
 
-// Like {rb_roaring32_op_inplace} but returns a new bitmap, leaving `self` unchanged
 static VALUE rb_roaring32_op(VALUE self, VALUE other, const struct rb_roaring32_op *op)
 {
-    if (rb_typeddata_is_kind_of(other, &roaring_type)) {
-        return rb_roaring32_binary_op(self, other, op->func);
+    roaring_bitmap_t *self_data = get_bitmap(self);
+    struct rb_roaring32_operand o;
+    rb_roaring32_operand(other, &o);
+
+    roaring_bitmap_t *result;
+    if (o.bitmap) {
+        result = op->func(self_data, o.bitmap);
+    } else {
+        result = roaring_bitmap_copy(self_data);
+        op->range_inplace(result, o.min, o.max);
     }
-    VALUE copy = rb_roaring32_wrap(rb_obj_class(self), roaring_bitmap_copy(get_bitmap(self)));
-    return rb_roaring32_op_inplace(copy, other, op);
+    RB_GC_GUARD(o.tmp);
+    return rb_roaring32_wrap(rb_obj_class(self), result);
 }
 
 // Inplace version of {and}. `other` may be a Bitmap32, a Range, or any Enumerable of Integers.

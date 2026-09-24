@@ -432,16 +432,6 @@ static VALUE rb_roaring64_statistics(VALUE self)
     return ret;
 }
 
-typedef roaring64_bitmap_t *binary_func(const roaring64_bitmap_t *, const roaring64_bitmap_t *);
-static VALUE rb_roaring64_binary_op(VALUE self, VALUE other, binary_func func) {
-    roaring64_bitmap_t *self_data = get_bitmap(self);
-    roaring64_bitmap_t *other_data = get_bitmap(other);
-
-    roaring64_bitmap_t *result = func(self_data, other_data);
-
-    return rb_roaring64_wrap(rb_obj_class(self), result);
-}
-
 typedef bool binary_func_bool(const roaring64_bitmap_t *, const roaring64_bitmap_t *);
 static VALUE rb_roaring64_binary_op_bool(VALUE self, VALUE other, binary_func_bool func) {
     roaring64_bitmap_t *self_data = get_bitmap(self);
@@ -500,41 +490,64 @@ static const struct rb_roaring64_op rb_roaring64_and_op = {
     roaring64_bitmap_and, roaring64_bitmap_and_inplace, rb_roaring64_keep_range_closed
 };
 
-static VALUE rb_roaring64_op_inplace(VALUE self, VALUE other, const struct rb_roaring64_op *op)
-{
-    roaring64_bitmap_t *self_data = get_mutable_bitmap(self);
+struct rb_roaring64_operand {
+    const roaring64_bitmap_t *bitmap;
     uint64_t min, max;
+    VALUE tmp;
+};
+
+static void rb_roaring64_operand(VALUE other, struct rb_roaring64_operand *out)
+{
+    out->bitmap = NULL;
+    out->tmp = Qnil;
 
     if (rb_typeddata_is_kind_of(other, &roaring64_type)) {
-        op->inplace(self_data, get_bitmap(other));
+        out->bitmap = get_bitmap(other);
     } else if (rb_obj_is_kind_of(other, rb_cRange)) {
-        if (roaring_ruby_range_bounds(other, UINT64_MAX, &min, &max)) {
-            op->range_inplace(self_data, min, max);
-        } else {
-            roaring64_bitmap_t *empty = roaring64_bitmap_create();
-            op->inplace(self_data, empty);
-            roaring64_bitmap_free(empty);
+        if (!roaring_ruby_range_bounds(other, UINT64_MAX, &out->min, &out->max)) {
+            out->tmp = rb_roaring64_alloc(cRoaringBitmap64);
+            out->bitmap = get_bitmap(out->tmp);
         }
     } else if (rb_respond_to(other, id_each)) {
-        // Collect into a temporary first so a bad element leaves the bitmap untouched
-        VALUE tmp = rb_roaring64_alloc(cRoaringBitmap64);
-        struct rb_roaring64_add_each_args args = { get_bitmap(tmp), {0} };
+        out->tmp = rb_roaring64_alloc(cRoaringBitmap64);
+        struct rb_roaring64_add_each_args args = { get_bitmap(out->tmp), {0} };
         rb_block_call(other, id_each, 0, NULL, rb_roaring64_add_i, (VALUE)&args);
-        op->inplace(self_data, args.bitmap);
-        RB_GC_GUARD(tmp);
+        out->bitmap = args.bitmap;
     } else {
         rb_raise(rb_eTypeError, "wrong argument type %s (expected Roaring::Bitmap64, Range or Enumerable)", rb_obj_classname(other));
     }
+}
+
+static VALUE rb_roaring64_op_inplace(VALUE self, VALUE other, const struct rb_roaring64_op *op)
+{
+    roaring64_bitmap_t *self_data = get_mutable_bitmap(self);
+    struct rb_roaring64_operand o;
+    rb_roaring64_operand(other, &o);
+
+    if (o.bitmap) {
+        op->inplace(self_data, o.bitmap);
+    } else {
+        op->range_inplace(self_data, o.min, o.max);
+    }
+    RB_GC_GUARD(o.tmp);
     return self;
 }
 
 static VALUE rb_roaring64_op(VALUE self, VALUE other, const struct rb_roaring64_op *op)
 {
-    if (rb_typeddata_is_kind_of(other, &roaring64_type)) {
-        return rb_roaring64_binary_op(self, other, op->func);
+    roaring64_bitmap_t *self_data = get_bitmap(self);
+    struct rb_roaring64_operand o;
+    rb_roaring64_operand(other, &o);
+
+    roaring64_bitmap_t *result;
+    if (o.bitmap) {
+        result = op->func(self_data, o.bitmap);
+    } else {
+        result = roaring64_bitmap_copy(self_data);
+        op->range_inplace(result, o.min, o.max);
     }
-    VALUE copy = rb_roaring64_wrap(rb_obj_class(self), roaring64_bitmap_copy(get_bitmap(self)));
-    return rb_roaring64_op_inplace(copy, other, op);
+    RB_GC_GUARD(o.tmp);
+    return rb_roaring64_wrap(rb_obj_class(self), result);
 }
 
 static VALUE rb_roaring64_and_inplace(VALUE self, VALUE other)
