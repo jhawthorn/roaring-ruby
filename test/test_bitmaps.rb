@@ -346,6 +346,25 @@ module BitmapTests
     assert_equal [1, 2, 3, 4, 5, 6], result.to_a
   end
 
+  def test_or_with_range
+    r1 = bitmap_class[1, 2, 3, 4]
+    result = r1 | (3...7)
+    refute_same r1, result
+    assert_equal [1, 2, 3, 4, 5, 6], result.to_a
+    assert_equal [1, 2, 3, 4, 5, 6, 7], (r1 | (3..7)).to_a
+    assert_equal [1, 2, 3, 4], r1.to_a
+
+    frozen = bitmap_class[1].freeze
+    result = frozen | (2..3)
+    refute_predicate result, :frozen?
+    assert_equal [1, 2, 3], result.to_a
+
+    assert_equal [1], (bitmap_class[1] | (5...5)).to_a
+    assert_equal [1, 5], (bitmap_class[1] | (5..5)).to_a
+    assert_raises(RangeError) { r1 | (-1..3) }
+    assert_raises(TypeError) { r1 | ("a".."b") }
+  end
+
   def test_xor
     r1 = bitmap_class[1, 2, 3, 4]
     r2 = bitmap_class[3, 4, 5, 6]

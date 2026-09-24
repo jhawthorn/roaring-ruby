@@ -525,10 +525,14 @@ static VALUE rb_roaring32_and(VALUE self, VALUE other)
     return rb_roaring32_binary_op(self, other, roaring_bitmap_and);
 }
 
-// Computes the union between two bitmaps
+// Computes the union between two bitmaps. `other` may be a Range of Integers.
 // @return [Bitmap32] a new bitmap containing all elements in either `self` or `other`
 static VALUE rb_roaring32_or(VALUE self, VALUE other)
 {
+    if (rb_obj_is_kind_of(other, rb_cRange)) {
+        VALUE copy = rb_roaring32_wrap(rb_obj_class(self), roaring_bitmap_copy(get_bitmap(self)));
+        return rb_roaring32_or_inplace(copy, other);
+    }
     return rb_roaring32_binary_op(self, other, roaring_bitmap_or);
 }
 

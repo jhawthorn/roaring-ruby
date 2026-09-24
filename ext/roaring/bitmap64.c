@@ -504,6 +504,10 @@ static VALUE rb_roaring64_and(VALUE self, VALUE other)
 
 static VALUE rb_roaring64_or(VALUE self, VALUE other)
 {
+    if (rb_obj_is_kind_of(other, rb_cRange)) {
+        VALUE copy = rb_roaring64_wrap(rb_obj_class(self), roaring64_bitmap_copy(get_bitmap(self)));
+        return rb_roaring64_or_inplace(copy, other);
+    }
     return rb_roaring64_binary_op(self, other, roaring64_bitmap_or);
 }
 
