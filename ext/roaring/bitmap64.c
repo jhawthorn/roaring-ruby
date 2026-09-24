@@ -4,17 +4,6 @@
 
 static VALUE cRoaringBitmap64;
 
-static inline uint64_t
-NUM2UINT64(VALUE num) {
-    if (!FIXNUM_P(num) && !RB_TYPE_P(num, T_BIGNUM)) {
-        rb_raise(rb_eTypeError, "wrong argument type %s (expected Integer)", rb_obj_classname(num));
-    } else if ((SIGNED_VALUE)num < (SIGNED_VALUE)INT2FIX(0)) {
-        rb_raise(rb_eRangeError, "Integer %"PRIdVALUE " must be >= 0 to use with Roaring::Bitmap32", num);
-    } else {
-        return NUM2ULL(num);
-    }
-}
-
 typedef struct {
     roaring64_bitmap_t *bitmap;
     int iter_lev;
