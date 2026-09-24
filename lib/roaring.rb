@@ -112,11 +112,6 @@ module Roaring
       end
     end
 
-    def add_range(min, max)
-      return if max <= min
-      add_range_closed(min, max - 1)
-    end
-
     # @return [Integer] Returns 0 if the bitmaps are equal, -1 / +1 if the set is a subset / superset of the given set, or nil if they both have unique elements.
     def <=>(other)
       if self == other
