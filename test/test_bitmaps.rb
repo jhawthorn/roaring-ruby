@@ -366,6 +366,67 @@ module BitmapTests
     assert_raises(TypeError) { bitmap < 1 }
   end
 
+  def test_superset_with_range
+    max = bitmap_class::MAX
+
+    assert bitmap_class[3, 4] >= (3..4)
+    assert bitmap_class[3, 4] >= (3...5)
+    assert bitmap_class[3, 4] >= (3...4)
+    refute bitmap_class[3, 4] >= (2..4)
+    refute bitmap_class[3, 4] >= (3..5)
+    refute bitmap_class[3, 4] >= (..4)
+    refute bitmap_class[3, 4] >= (3..)
+    assert bitmap_class[0..7] >= (..4)
+    assert bitmap_class[max - 2, max - 1, max] >= (max - 2..)
+    assert bitmap_class[max] >= (max..max)
+    assert bitmap_class[max] >= (max...max)
+    assert bitmap_class[] >= (5...5)
+    refute bitmap_class[] >= (5..5)
+    assert bitmap_class[5] >= (5...5)
+    assert bitmap_class[5] >= (5..5)
+    assert bitmap_class[0..2**32 - 1] >= (0...2**32) if max == 2**32 - 1
+
+    assert bitmap_class[3, 4, 5] > (3..4)
+    refute bitmap_class[3, 4] > (3..4)
+    refute bitmap_class[3, 5] > (3..4)
+    refute bitmap_class[] > (5...5)
+    assert bitmap_class[5] > (5...5)
+    refute bitmap_class[5] > (5..5)
+    assert bitmap_class[5, 6] > (5..5)
+    refute bitmap_class[max] > (0..)
+
+    assert bitmap_class[1].freeze >= (1..1)
+
+    bitmap = bitmap_class[7]
+    assert_raises(RangeError) { bitmap >= (-1..3) }
+    assert_raises(TypeError) { bitmap >= ("a".."b") }
+    assert_raises(RangeError) { bitmap > (-1..3) }
+    assert_raises(TypeError) { bitmap > ("a".."b") }
+  end
+
+  def test_superset_with_enumerable
+    assert bitmap_class[3, 4, 5] >= [4, 3]
+    assert bitmap_class[3, 4] >= [4, 3]
+    refute bitmap_class[3] >= [4, 3]
+    assert bitmap_class[3, 4] >= Set[3]
+    assert bitmap_class[3] >= other_bitmap_class[3]
+    assert bitmap_class[] >= []
+    assert bitmap_class[1] >= []
+
+    assert bitmap_class[3, 4, 5] > [4, 3]
+    refute bitmap_class[3, 4] > [4, 3]
+    assert bitmap_class[3, 4] > Set[3]
+    refute bitmap_class[] > []
+    assert bitmap_class[1] > []
+
+    bitmap = bitmap_class[7]
+    assert_raises(RangeError) { bitmap >= [-1] }
+    assert_raises(TypeError) { bitmap >= [7, "a"] }
+    assert_raises(TypeError) { bitmap >= 1 }
+    assert_raises(TypeError) { bitmap >= nil }
+    assert_raises(TypeError) { bitmap > 1 }
+  end
+
   def test_intersect
     r1 = bitmap_class[1, 2]
     r2 = bitmap_class[2, 3]

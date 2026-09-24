@@ -43,6 +43,8 @@ module Roaring
     #
     #   @!parse alias_method :subset?, :<=
     #   @!parse alias_method :proper_subset?, :<
+    #   @!parse alias_method :superset?, :>=
+    #   @!parse alias_method :proper_superset?, :>
     def self.define_roaring_aliases!
       alias_method :<<, :add
 
@@ -69,6 +71,8 @@ module Roaring
 
       alias_method :subset?, :<=
       alias_method :proper_subset?, :<
+      alias_method :superset?, :>=
+      alias_method :proper_superset?, :>
     end
 
     # Convenience method for building a bitmap
@@ -103,21 +107,6 @@ module Roaring
         super
       end
     end
-
-    # Check if `self` is a superset of `other`. A superset requires that `self` contain all of `other`'s elemtents. They may be equal.
-    # @return [Boolean] `true` if `self` is a strict subset of `other`, otherwise `false`
-    def superset?(other)
-      other <= self
-    end
-
-    # Check if `self` is a strict superset of `other`. A strict superset requires that `self` contain all of `other`'s elemtents, but that they aren't exactly equal.
-    # @return [Boolean] `true` if `self` is a strict subset of `other`, otherwise `false`
-    def proper_superset?(other)
-      other < self
-    end
-
-    alias_method :>=, :superset?
-    alias_method :>, :proper_superset?
 
     def add_range(min, max)
       return if max <= min

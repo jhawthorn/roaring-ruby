@@ -615,6 +615,29 @@ static const struct rb_roaring32_pred rb_roaring32_strict_subset_pred = {
     roaring_bitmap_is_strict_subset, rb_roaring32_strictly_within_range_closed
 };
 
+static bool rb_roaring32_is_superset(const roaring_bitmap_t *r1, const roaring_bitmap_t *r2)
+{
+    return roaring_bitmap_is_subset(r2, r1);
+}
+
+static bool rb_roaring32_is_strict_superset(const roaring_bitmap_t *r1, const roaring_bitmap_t *r2)
+{
+    return roaring_bitmap_is_strict_subset(r2, r1);
+}
+
+static bool rb_roaring32_strictly_contains_range_closed(const roaring_bitmap_t *r, uint32_t min, uint32_t max)
+{
+    return roaring_bitmap_contains_range_closed(r, min, max) && roaring_bitmap_get_cardinality(r) - 1 > (uint64_t)max - min;
+}
+
+static const struct rb_roaring32_pred rb_roaring32_superset_pred = {
+    rb_roaring32_is_superset, roaring_bitmap_contains_range_closed
+};
+
+static const struct rb_roaring32_pred rb_roaring32_strict_superset_pred = {
+    rb_roaring32_is_strict_superset, rb_roaring32_strictly_contains_range_closed
+};
+
 // Inplace version of {and}. `other` may be a Bitmap32, a Range, or any Enumerable of Integers.
 // @return [self] the modified Bitmap
 static VALUE rb_roaring32_and_inplace(VALUE self, VALUE other)
@@ -729,6 +752,22 @@ static VALUE rb_roaring32_lte(VALUE self, VALUE other)
     return rb_roaring32_pred(self, other, &rb_roaring32_subset_pred);
 }
 
+// Check if `self` is a strict superset of `other`, which may be a Bitmap32, a Range, or any Enumerable of Integers.
+// A strict superset requires that `self` contain all of `other`'s elements, but that they aren't exactly equal.
+// @return [Boolean] `true` if `self` is a strict superset of `other`, otherwise `false`
+static VALUE rb_roaring32_gt(VALUE self, VALUE other)
+{
+    return rb_roaring32_pred(self, other, &rb_roaring32_strict_superset_pred);
+}
+
+// Check if `self` is a (non-strict) superset of `other`, which may be a Bitmap32, a Range, or any Enumerable of Integers.
+// A superset requires that `self` contain all of `other`'s elements. They may be equal.
+// @return [Boolean] `true` if `self` is a superset of `other`, otherwise `false`
+static VALUE rb_roaring32_gte(VALUE self, VALUE other)
+{
+    return rb_roaring32_pred(self, other, &rb_roaring32_superset_pred);
+}
+
 // Checks whether `self` intersects `other`
 // @return [Boolean] `true` if `self` intersects `other`, otherwise `false`
 static VALUE rb_roaring32_intersect_p(VALUE self, VALUE other)
@@ -777,6 +816,8 @@ rb_roaring32_init(void)
   rb_define_method(cRoaringBitmap32, "to_a", rb_roaring32_to_a, 0);
   rb_define_method(cRoaringBitmap32, "<", rb_roaring32_lt, 1);
   rb_define_method(cRoaringBitmap32, "<=", rb_roaring32_lte, 1);
+  rb_define_method(cRoaringBitmap32, ">", rb_roaring32_gt, 1);
+  rb_define_method(cRoaringBitmap32, ">=", rb_roaring32_gte, 1);
   rb_define_method(cRoaringBitmap32, "intersect?", rb_roaring32_intersect_p, 1);
 
   rb_define_method(cRoaringBitmap32, "first", rb_roaring32_first, -1);

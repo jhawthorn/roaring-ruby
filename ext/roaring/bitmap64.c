@@ -584,6 +584,29 @@ static const struct rb_roaring64_pred rb_roaring64_strict_subset_pred = {
     roaring64_bitmap_is_strict_subset, rb_roaring64_strictly_within_range_closed
 };
 
+static bool rb_roaring64_is_superset(const roaring64_bitmap_t *r1, const roaring64_bitmap_t *r2)
+{
+    return roaring64_bitmap_is_subset(r2, r1);
+}
+
+static bool rb_roaring64_is_strict_superset(const roaring64_bitmap_t *r1, const roaring64_bitmap_t *r2)
+{
+    return roaring64_bitmap_is_strict_subset(r2, r1);
+}
+
+static bool rb_roaring64_strictly_contains_range_closed(const roaring64_bitmap_t *r, uint64_t min, uint64_t max)
+{
+    return roaring64_bitmap_contains_range_closed(r, min, max) && roaring64_bitmap_get_cardinality(r) - 1 > max - min;
+}
+
+static const struct rb_roaring64_pred rb_roaring64_superset_pred = {
+    rb_roaring64_is_superset, roaring64_bitmap_contains_range_closed
+};
+
+static const struct rb_roaring64_pred rb_roaring64_strict_superset_pred = {
+    rb_roaring64_is_strict_superset, rb_roaring64_strictly_contains_range_closed
+};
+
 static VALUE rb_roaring64_and_inplace(VALUE self, VALUE other)
 {
     return rb_roaring64_op_inplace(self, other, &rb_roaring64_and_op);
@@ -664,6 +687,16 @@ static VALUE rb_roaring64_lte(VALUE self, VALUE other)
     return rb_roaring64_pred(self, other, &rb_roaring64_subset_pred);
 }
 
+static VALUE rb_roaring64_gt(VALUE self, VALUE other)
+{
+    return rb_roaring64_pred(self, other, &rb_roaring64_strict_superset_pred);
+}
+
+static VALUE rb_roaring64_gte(VALUE self, VALUE other)
+{
+    return rb_roaring64_pred(self, other, &rb_roaring64_superset_pred);
+}
+
 static VALUE rb_roaring64_intersect_p(VALUE self, VALUE other)
 {
     return rb_roaring64_binary_op_bool(self, other, roaring64_bitmap_intersect);
@@ -711,6 +744,8 @@ rb_roaring64_init(void)
   rb_define_method(cRoaringBitmap64, "to_a", rb_roaring64_to_a, 0);
   rb_define_method(cRoaringBitmap64, "<", rb_roaring64_lt, 1);
   rb_define_method(cRoaringBitmap64, "<=", rb_roaring64_lte, 1);
+  rb_define_method(cRoaringBitmap64, ">", rb_roaring64_gt, 1);
+  rb_define_method(cRoaringBitmap64, ">=", rb_roaring64_gte, 1);
   rb_define_method(cRoaringBitmap64, "intersect?", rb_roaring64_intersect_p, 1);
 
   rb_define_method(cRoaringBitmap64, "first", rb_roaring64_first, -1);
