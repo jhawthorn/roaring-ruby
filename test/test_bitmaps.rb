@@ -430,6 +430,43 @@ module BitmapTests
     assert_equal [1, 2], result.to_a
   end
 
+  def test_difference_with_range
+    r1 = bitmap_class[1, 2, 3, 4]
+    result = r1 - (3...7)
+    refute_same r1, result
+    assert_equal [1, 2], result.to_a
+    assert_equal [1, 2, 3], (r1 - (4..7)).to_a
+    assert_equal [1, 2, 3, 4], r1.to_a
+
+    frozen = bitmap_class[1, 2, 3].freeze
+    result = frozen - (2..3)
+    refute_predicate result, :frozen?
+    assert_equal [1], result.to_a
+
+    assert_equal [1, 5], (bitmap_class[1, 5] - (5...5)).to_a
+    assert_equal [1], (bitmap_class[1, 5] - (5..5)).to_a
+    assert_raises(RangeError) { r1 - (-1..3) }
+    assert_raises(TypeError) { r1 - ("a".."b") }
+  end
+
+  def test_difference_with_enumerable
+    r1 = bitmap_class[1, 2, 3, 4]
+    result = r1 - [4, 3]
+    refute_same r1, result
+    assert_equal [1, 2], result.to_a
+    assert_equal [1, 2, 4], (r1 - Set[3]).to_a
+    assert_equal [1, 2, 3], (r1 - other_bitmap_class[4]).to_a
+    assert_equal [1, 2, 3, 4], r1.to_a
+
+    frozen = bitmap_class[1, 2].freeze
+    result = frozen - [2]
+    refute_predicate result, :frozen?
+    assert_equal [1], result.to_a
+
+    assert_raises(RangeError) { r1 - [-1] }
+    assert_raises(TypeError) { r1 - 1 }
+  end
+
   def test_and_inplace
     r1 = bitmap_class[1, 2, 3, 4]
     r2 = bitmap_class[3, 4, 5, 6]
@@ -533,6 +570,70 @@ module BitmapTests
     result = r1.andnot!(r2)
     assert_same r1, result
     assert_equal [1, 2], result.to_a
+  end
+
+  def test_difference_inplace_with_range
+    max = bitmap_class::MAX
+
+    bitmap = bitmap_class[0..10]
+    assert_same bitmap, bitmap.andnot!(3...7)
+    assert_equal [0, 1, 2, 7, 8, 9, 10], bitmap.to_a
+
+    assert_equal [0, 1, 2, 8, 9, 10], bitmap_class[0..10].andnot!(3..7).to_a
+    assert_equal [5, 6, 7], bitmap_class[0..7].andnot!(..4).to_a
+    assert_equal [4, 5, 6, 7], bitmap_class[0..7].andnot!(...4).to_a
+    assert_equal [0, 1, 2], bitmap_class[0, 1, 2, 3, max].andnot!(3..).to_a
+    assert_equal [1], bitmap_class[1, max].andnot!(max..max).to_a
+    assert_equal [], bitmap_class[1, max].andnot!(0..).to_a
+
+    assert_equal [0, 7], bitmap_class[0, 7].andnot!(0...0).to_a
+    assert_equal [7], bitmap_class[0, 7].andnot!(0..0).to_a
+    assert_equal [5, 7], bitmap_class[5, 7].andnot!(5...5).to_a
+    assert_equal [7], bitmap_class[5, 7].andnot!(5..5).to_a
+    assert_equal [5, 7], bitmap_class[5, 7].andnot!(5..3).to_a
+    assert_equal [7, max], bitmap_class[7, max].andnot!(max...max).to_a
+    assert_equal [7], bitmap_class[7, max].andnot!(max..max).to_a
+
+    bitmap = bitmap_class[7]
+
+    assert_raises(RangeError) { bitmap.andnot!(max..max + 1) }
+    assert_raises(RangeError) { bitmap.andnot!(-1..3) }
+    assert_raises(TypeError) { bitmap.andnot!("a".."b") }
+    assert_raises(TypeError) { bitmap.andnot!(0..1.5) }
+    assert_equal [7], bitmap.to_a
+
+    assert_raises(FrozenError) { bitmap_class[1].freeze.andnot!(0..3) }
+    assert_raises(RuntimeError) { bitmap.each { bitmap.andnot!(0..3) } }
+    assert_equal [7], bitmap.to_a
+  end
+
+  def test_difference_inplace_with_enumerable
+    max = bitmap_class::MAX
+
+    bitmap = bitmap_class[1, 2, 3, max]
+    assert_same bitmap, bitmap.andnot!([3, 2, 3, max])
+    assert_equal [1], bitmap.to_a
+    assert_equal [1], bitmap_class[1, 2, 3].andnot!(Set[3, 2]).to_a
+    assert_equal [2, 3, 5, 6], bitmap_class[1..6].andnot!((1..10) % 3).to_a
+    assert_equal [1], bitmap_class[1, 2, 3].andnot!([2, 3].each).to_a
+    assert_equal [1], bitmap_class[1, 5].andnot!(other_bitmap_class[5]).to_a
+    assert_equal [1], bitmap_class[1].andnot!([]).to_a
+    assert_equal [1], bitmap_class[1].andnot!(Set[]).to_a
+
+    bitmap = bitmap_class[7]
+    assert_raises(RangeError) { bitmap.andnot!([7, -1]) }
+    assert_raises(RangeError) { bitmap.andnot!([7, max + 1]) }
+    assert_raises(TypeError) { bitmap.andnot!([7, "a"]) }
+    assert_raises(TypeError) { bitmap.andnot!([7, 1.5]) }
+    assert_raises(TypeError) { bitmap.andnot!(Set[7, "a"]) }
+    assert_raises(TypeError) { bitmap.andnot!(7) }
+    assert_raises(TypeError) { bitmap.andnot!(nil) }
+    assert_raises(TypeError) { bitmap.andnot!({ 7 => 2 }) }
+    assert_equal [7], bitmap.to_a
+
+    assert_raises(FrozenError) { bitmap_class[1].freeze.andnot!([1]) }
+    assert_raises(RuntimeError) { bitmap.each { bitmap.andnot!([7]) } }
+    assert_equal [7], bitmap.to_a
   end
 
   def test_min_and_max
