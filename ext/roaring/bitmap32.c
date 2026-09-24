@@ -526,6 +526,15 @@ static const struct rb_roaring32_op rb_roaring32_andnot_op = {
     roaring_bitmap_andnot, roaring_bitmap_andnot_inplace, roaring_bitmap_remove_range_closed
 };
 
+static void rb_roaring32_flip_range_closed(roaring_bitmap_t *r, uint32_t min, uint32_t max)
+{
+    roaring_bitmap_flip_inplace(r, min, (uint64_t)max + 1);
+}
+
+static const struct rb_roaring32_op rb_roaring32_xor_op = {
+    roaring_bitmap_xor, roaring_bitmap_xor_inplace, rb_roaring32_flip_range_closed
+};
+
 // Applies `op` to `self`, where `other` may be a Bitmap32, a Range, or any Enumerable of Integers
 static VALUE rb_roaring32_op_inplace(VALUE self, VALUE other, const struct rb_roaring32_op *op)
 {
@@ -568,11 +577,11 @@ static VALUE rb_roaring32_or_inplace(VALUE self, VALUE other)
     return rb_roaring32_op_inplace(self, other, &rb_roaring32_or_op);
 }
 
-// Inplace version of {xor}
+// Inplace version of {xor}. `other` may be a Bitmap32, a Range, or any Enumerable of Integers.
 // @return [self] the modified Bitmap
 static VALUE rb_roaring32_xor_inplace(VALUE self, VALUE other)
 {
-    return rb_roaring32_binary_op_inplace(self, other, roaring_bitmap_xor_inplace);
+    return rb_roaring32_op_inplace(self, other, &rb_roaring32_xor_op);
 }
 
 // Inplace version of {andnot}. `other` may be a Bitmap32, a Range, or any Enumerable of Integers.
@@ -596,11 +605,11 @@ static VALUE rb_roaring32_or(VALUE self, VALUE other)
     return rb_roaring32_op(self, other, &rb_roaring32_or_op);
 }
 
-// Computes the exclusive or between two bitmaps
+// Computes the exclusive or between `self` and `other`, which may be a Bitmap32, a Range, or any Enumerable of Integers.
 // @return [Bitmap32] a new bitmap containing all elements in one of `self` or `other`, but not both
 static VALUE rb_roaring32_xor(VALUE self, VALUE other)
 {
-    return rb_roaring32_binary_op(self, other, roaring_bitmap_xor);
+    return rb_roaring32_op(self, other, &rb_roaring32_xor_op);
 }
 
 // Computes the cardinality of the intersection between two bitmaps without

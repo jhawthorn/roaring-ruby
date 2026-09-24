@@ -501,6 +501,10 @@ static const struct rb_roaring64_op rb_roaring64_andnot_op = {
     roaring64_bitmap_andnot, roaring64_bitmap_andnot_inplace, roaring64_bitmap_remove_range_closed
 };
 
+static const struct rb_roaring64_op rb_roaring64_xor_op = {
+    roaring64_bitmap_xor, roaring64_bitmap_xor_inplace, roaring64_bitmap_flip_closed_inplace
+};
+
 static VALUE rb_roaring64_op_inplace(VALUE self, VALUE other, const struct rb_roaring64_op *op)
 {
     roaring64_bitmap_t *self_data = get_mutable_bitmap(self);
@@ -543,7 +547,7 @@ static VALUE rb_roaring64_or_inplace(VALUE self, VALUE other)
 
 static VALUE rb_roaring64_xor_inplace(VALUE self, VALUE other)
 {
-    return rb_roaring64_binary_op_inplace(self, other, roaring64_bitmap_xor_inplace);
+    return rb_roaring64_op_inplace(self, other, &rb_roaring64_xor_op);
 }
 
 static VALUE rb_roaring64_andnot_inplace(VALUE self, VALUE other)
@@ -563,7 +567,7 @@ static VALUE rb_roaring64_or(VALUE self, VALUE other)
 
 static VALUE rb_roaring64_xor(VALUE self, VALUE other)
 {
-    return rb_roaring64_binary_op(self, other, roaring64_bitmap_xor);
+    return rb_roaring64_op(self, other, &rb_roaring64_xor_op);
 }
 
 static VALUE rb_roaring64_and_cardinality(VALUE self, VALUE other)
