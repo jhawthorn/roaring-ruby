@@ -70,7 +70,11 @@ static VALUE rb_roaring32_replace(VALUE self, VALUE other) {
     roaring_bitmap_t *self_data = get_mutable_bitmap(self);
     roaring_bitmap_t *other_data = get_bitmap(other);
 
-    roaring_bitmap_overwrite(self_data, other_data);
+    // roaring_bitmap_overwrite frees dest's containers before cloning src's,
+    // so it must never be called with the same bitmap on both sides.
+    if (self_data != other_data) {
+        roaring_bitmap_overwrite(self_data, other_data);
+    }
 
     return self;
 }
@@ -548,7 +552,12 @@ static VALUE rb_roaring32_op_inplace(VALUE self, VALUE other, const struct rb_ro
     struct rb_roaring32_operand o;
     rb_roaring32_operand(other, &o);
 
-    if (o.bitmap) {
+    if (o.bitmap == self_data) {
+        // CRoaring's inplace operations can't take aliased arguments
+        roaring_bitmap_t *copy = roaring_bitmap_copy(self_data);
+        op->inplace(self_data, copy);
+        roaring_bitmap_free(copy);
+    } else if (o.bitmap) {
         op->inplace(self_data, o.bitmap);
     } else {
         op->range_inplace(self_data, o.min, o.max);
@@ -645,6 +654,8 @@ static const struct rb_roaring32_pred rb_roaring32_intersect_pred = {
 // @return [self] the modified Bitmap
 static VALUE rb_roaring32_and_inplace(VALUE self, VALUE other)
 {
+    get_mutable_bitmap(self);
+    if (self == other) return self;
     return rb_roaring32_op_inplace(self, other, &rb_roaring32_and_op);
 }
 
@@ -652,6 +663,8 @@ static VALUE rb_roaring32_and_inplace(VALUE self, VALUE other)
 // @return [self] the modified Bitmap
 static VALUE rb_roaring32_or_inplace(VALUE self, VALUE other)
 {
+    get_mutable_bitmap(self);
+    if (self == other) return self;
     return rb_roaring32_op_inplace(self, other, &rb_roaring32_or_op);
 }
 
@@ -659,6 +672,11 @@ static VALUE rb_roaring32_or_inplace(VALUE self, VALUE other)
 // @return [self] the modified Bitmap
 static VALUE rb_roaring32_xor_inplace(VALUE self, VALUE other)
 {
+    roaring_bitmap_t *data = get_mutable_bitmap(self);
+    if (self == other) {
+        roaring_bitmap_clear(data);
+        return self;
+    }
     return rb_roaring32_op_inplace(self, other, &rb_roaring32_xor_op);
 }
 
@@ -666,6 +684,11 @@ static VALUE rb_roaring32_xor_inplace(VALUE self, VALUE other)
 // @return [self] the modified Bitmap
 static VALUE rb_roaring32_andnot_inplace(VALUE self, VALUE other)
 {
+    roaring_bitmap_t *data = get_mutable_bitmap(self);
+    if (self == other) {
+        roaring_bitmap_clear(data);
+        return self;
+    }
     return rb_roaring32_op_inplace(self, other, &rb_roaring32_andnot_op);
 }
 

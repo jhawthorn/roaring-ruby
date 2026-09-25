@@ -514,7 +514,12 @@ static VALUE rb_roaring64_op_inplace(VALUE self, VALUE other, const struct rb_ro
     struct rb_roaring64_operand o;
     rb_roaring64_operand(other, &o);
 
-    if (o.bitmap) {
+    if (o.bitmap == self_data) {
+        // CRoaring's inplace operations can't take aliased arguments
+        roaring64_bitmap_t *copy = roaring64_bitmap_copy(self_data);
+        op->inplace(self_data, copy);
+        roaring64_bitmap_free(copy);
+    } else if (o.bitmap) {
         op->inplace(self_data, o.bitmap);
     } else {
         op->range_inplace(self_data, o.min, o.max);
@@ -608,6 +613,8 @@ static const struct rb_roaring64_pred rb_roaring64_intersect_pred = {
 
 static VALUE rb_roaring64_and_inplace(VALUE self, VALUE other)
 {
+    get_mutable_bitmap(self);
+    if (self == other) return self;
     return rb_roaring64_op_inplace(self, other, &rb_roaring64_and_op);
 }
 
@@ -615,16 +622,28 @@ static VALUE rb_roaring64_and_inplace(VALUE self, VALUE other)
 // @return [self] the modified Bitmap
 static VALUE rb_roaring64_or_inplace(VALUE self, VALUE other)
 {
+    get_mutable_bitmap(self);
+    if (self == other) return self;
     return rb_roaring64_op_inplace(self, other, &rb_roaring64_or_op);
 }
 
 static VALUE rb_roaring64_xor_inplace(VALUE self, VALUE other)
 {
+    roaring64_bitmap_t *data = get_mutable_bitmap(self);
+    if (self == other) {
+        roaring64_bitmap_clear(data);
+        return self;
+    }
     return rb_roaring64_op_inplace(self, other, &rb_roaring64_xor_op);
 }
 
 static VALUE rb_roaring64_andnot_inplace(VALUE self, VALUE other)
 {
+    roaring64_bitmap_t *data = get_mutable_bitmap(self);
+    if (self == other) {
+        roaring64_bitmap_clear(data);
+        return self;
+    }
     return rb_roaring64_op_inplace(self, other, &rb_roaring64_andnot_op);
 }
 

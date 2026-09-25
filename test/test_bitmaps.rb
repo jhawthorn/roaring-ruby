@@ -1238,6 +1238,79 @@ module BitmapTests
     bitmap.each { bitmap.each { } }
   end
 
+  def test_operations_with_self
+    bitmap = bitmap_class[1, 2, 3]
+
+    assert_equal bitmap_class[1, 2, 3], bitmap | bitmap
+    assert_equal bitmap_class[1, 2, 3], bitmap & bitmap
+    assert_equal bitmap_class[], bitmap ^ bitmap
+    assert_equal bitmap_class[], bitmap - bitmap
+    assert_equal 3, bitmap.or_cardinality(bitmap)
+    assert_equal 3, bitmap.and_cardinality(bitmap)
+    assert_equal 0, bitmap.xor_cardinality(bitmap)
+    assert_equal 0, bitmap.andnot_cardinality(bitmap)
+    assert_equal 0, bitmap <=> bitmap
+    assert bitmap <= bitmap
+    assert bitmap >= bitmap
+    refute bitmap < bitmap
+    refute bitmap > bitmap
+    assert bitmap.intersect?(bitmap)
+    assert_equal [1, 2, 3], bitmap.to_a
+
+    assert_same bitmap, bitmap.replace(bitmap)
+    assert_equal [1, 2, 3], bitmap.to_a
+    assert_same bitmap, bitmap.or!(bitmap)
+    assert_equal [1, 2, 3], bitmap.to_a
+    assert_same bitmap, bitmap.merge(bitmap)
+    assert_equal [1, 2, 3], bitmap.to_a
+    assert_same bitmap, bitmap.and!(bitmap)
+    assert_equal [1, 2, 3], bitmap.to_a
+
+    assert_same bitmap, bitmap.xor!(bitmap)
+    assert_empty bitmap
+    bitmap.or!(1..3)
+    assert_same bitmap, bitmap.andnot!(bitmap)
+    assert_empty bitmap
+    bitmap.or!(1..3)
+    assert_same bitmap, bitmap.subtract(bitmap)
+    assert_empty bitmap
+
+    empty = bitmap_class[]
+    assert_same empty, empty.or!(empty)
+    assert_same empty, empty.and!(empty)
+    assert_same empty, empty.xor!(empty)
+    assert_same empty, empty.andnot!(empty)
+    assert_same empty, empty.replace(empty)
+    assert_empty empty
+
+    big = bitmap_class[0..100_000]
+    big.run_optimize
+    big.xor!(big)
+    assert_empty big
+  end
+
+  def test_operations_with_self_frozen
+    bitmap = bitmap_class[1].freeze
+    assert_raises(FrozenError) { bitmap.or!(bitmap) }
+    assert_raises(FrozenError) { bitmap.and!(bitmap) }
+    assert_raises(FrozenError) { bitmap.xor!(bitmap) }
+    assert_raises(FrozenError) { bitmap.andnot!(bitmap) }
+    assert_raises(FrozenError) { bitmap.replace(bitmap) }
+    assert_equal [1], bitmap.to_a
+  end
+
+  def test_operations_with_self_during_iteration
+    bitmap = bitmap_class[1]
+    bitmap.each do
+      assert_raises(RuntimeError) { bitmap.or!(bitmap) }
+      assert_raises(RuntimeError) { bitmap.and!(bitmap) }
+      assert_raises(RuntimeError) { bitmap.xor!(bitmap) }
+      assert_raises(RuntimeError) { bitmap.andnot!(bitmap) }
+      assert_raises(RuntimeError) { bitmap.replace(bitmap) }
+    end
+    assert_equal [1], bitmap.to_a
+  end
+
   def test_inherits_from_bitmap
     assert_equal Roaring::Bitmap, bitmap_class.superclass
     assert_kind_of Roaring::Bitmap, bitmap_class.new
