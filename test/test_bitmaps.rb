@@ -1204,6 +1204,7 @@ module BitmapTests
     assert_raises(FrozenError) { bitmap.xor!(other) }
     assert_raises(FrozenError) { bitmap.andnot!(other) }
     assert_raises(FrozenError) { bitmap.run_optimize }
+    assert_raises(FrozenError) { bitmap.shrink_to_fit }
     assert_equal [1, 2, 3], bitmap.to_a
 
     assert_equal bitmap_class[1, 2, 3, 4], bitmap | other
@@ -1269,6 +1270,16 @@ class Bitmap32Test < Minitest::Test
     bitmap.run_optimize
 
     assert ObjectSpace.memsize_of(bitmap) < 1000
+  end
+
+  def test_shrink_to_fit
+    bitmap = bitmap_class.new
+    1.step(10_000, 3) { |i| bitmap.add(i) }
+    assert_operator bitmap.shrink_to_fit, :>, 0
+    assert_equal 0, bitmap.shrink_to_fit
+    assert_equal (1..10_000).step(3).to_a, bitmap.to_a
+
+    assert_equal 0, bitmap_class[].shrink_to_fit
   end
 
   def bitmap_class

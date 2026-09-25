@@ -366,6 +366,12 @@ static VALUE rb_roaring64_run_optimize(VALUE self)
     return RBOOL(roaring64_bitmap_run_optimize(data));
 }
 
+static VALUE rb_roaring64_shrink_to_fit(VALUE self)
+{
+    roaring64_bitmap_t *data = get_mutable_bitmap(self);
+    return SIZET2NUM(roaring64_bitmap_shrink_to_fit(data));
+}
+
 static VALUE rb_roaring64_serialize(VALUE self)
 {
     roaring64_bitmap_t *data = get_bitmap(self);
@@ -746,6 +752,7 @@ rb_roaring64_init(void)
   rb_define_method(cRoaringBitmap64, "max", rb_roaring64_max, -1);
 
   rb_define_method(cRoaringBitmap64, "run_optimize", rb_roaring64_run_optimize, 0);
+  rb_define_method(cRoaringBitmap64, "shrink_to_fit", rb_roaring64_shrink_to_fit, 0);
   rb_define_method(cRoaringBitmap64, "statistics", rb_roaring64_statistics, 0);
 
   rb_define_method(cRoaringBitmap64, "serialize", rb_roaring64_serialize, 0);

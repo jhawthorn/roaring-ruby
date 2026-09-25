@@ -373,6 +373,14 @@ static VALUE rb_roaring32_run_optimize(VALUE self)
     return RBOOL(roaring_bitmap_run_optimize(data));
 }
 
+// Releases any unused capacity held by the bitmap's internal arrays
+// @return [Integer] the number of bytes freed
+static VALUE rb_roaring32_shrink_to_fit(VALUE self)
+{
+    roaring_bitmap_t *data = get_mutable_bitmap(self);
+    return SIZET2NUM(roaring_bitmap_shrink_to_fit(data));
+}
+
 // Serializes a bitmap into a string
 // @return [string]
 static VALUE rb_roaring32_serialize(VALUE self)
@@ -820,6 +828,7 @@ rb_roaring32_init(void)
   rb_define_method(cRoaringBitmap32, "max", rb_roaring32_max, -1);
 
   rb_define_method(cRoaringBitmap32, "run_optimize", rb_roaring32_run_optimize, 0);
+  rb_define_method(cRoaringBitmap32, "shrink_to_fit", rb_roaring32_shrink_to_fit, 0);
   rb_define_method(cRoaringBitmap32, "statistics", rb_roaring32_statistics, 0);
 
   rb_define_method(cRoaringBitmap32, "serialize", rb_roaring32_serialize, 0);
