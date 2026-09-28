@@ -21,6 +21,9 @@ module BitmapTests
     -(2 ** 128),
     -(2 ** 65),
     -(2 ** 64),
+    -(2 ** 63),
+    -(2 ** 62) - 1,
+    -(2 ** 62),
     -(2 ** 33),
     -(2 ** 32),
     -(2 ** 31),
@@ -129,6 +132,29 @@ module BitmapTests
 
     assert bitmap.empty?
     assert_equal 0, bitmap.cardinality
+  end
+
+  # -(2**62) - 1 is the first negative Bignum on 64-bit, -(2**63) fits in a signed long long
+  def test_it_raises_on_negative_num
+    bitmap = bitmap_class[1]
+    [-1, -5, -(2 ** 62), -(2 ** 62) - 1, -(2 ** 63), -(2 ** 64) + 1, -(2 ** 64)].each do |i|
+      error = assert_raises(RangeError) { bitmap << i }
+      assert_equal "Integer #{i} must be >= 0 to use with Roaring::Bitmap", error.message
+
+      assert_raises(RangeError) { bitmap.add?(i) }
+      assert_raises(RangeError) { bitmap.remove(i) }
+      assert_raises(RangeError) { bitmap.remove?(i) }
+      assert_raises(RangeError) { bitmap.include?(i) }
+      assert_raises(RangeError) { bitmap[i] }
+      assert_raises(RangeError) { bitmap.rank(i) }
+      assert_raises(RangeError) { bitmap.each_from(i) }
+      assert_raises(RangeError) { bitmap.or!(i..5) }
+      assert_raises(RangeError) { bitmap.or!(0..i) }
+      assert_raises(RangeError) { bitmap.or!([i]) }
+      assert_raises(RangeError) { bitmap <= (i..5) }
+      assert_raises(RangeError) { bitmap.intersect?(i..5) }
+    end
+    assert_equal [1], bitmap.to_a
   end
 
   def test_it_raises_on_too_large_num

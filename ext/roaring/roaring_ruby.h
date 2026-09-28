@@ -18,10 +18,12 @@ extern VALUE rb_cRoaringBitmap;
 
 static inline void
 roaring_ruby_check_unsigned(VALUE num) {
-    if (!FIXNUM_P(num) && !RB_TYPE_P(num, T_BIGNUM)) {
+    if (!RB_INTEGER_TYPE_P(num)) {
         rb_raise(rb_eTypeError, "wrong argument type %s (expected Integer)", rb_obj_classname(num));
-    } else if ((SIGNED_VALUE)num < (SIGNED_VALUE)INT2FIX(0)) {
-        rb_raise(rb_eRangeError, "Integer %"PRIdVALUE " must be >= 0 to use with Roaring::Bitmap", num);
+    }
+    bool negative = FIXNUM_P(num) ? FIX2LONG(num) < 0 : RBIGNUM_NEGATIVE_P(num);
+    if (negative) {
+        rb_raise(rb_eRangeError, "Integer %"PRIsVALUE" must be >= 0 to use with Roaring::Bitmap", num);
     }
 }
 
