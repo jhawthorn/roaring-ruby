@@ -40,6 +40,7 @@ NUM2UINT64(VALUE num) {
 }
 
 // Converts a Range to closed bounds within [0, limit]. Returns false when the range is empty.
+// Beginless and endless ranges are rejected: they cover values outside the bitmap's domain.
 static inline bool
 roaring_ruby_range_bounds(VALUE range, uint64_t limit, uint64_t *min, uint64_t *max)
 {
@@ -47,14 +48,18 @@ roaring_ruby_range_bounds(VALUE range, uint64_t limit, uint64_t *min, uint64_t *
     int excl;
     rb_range_values(range, &beg, &end, &excl);
 
-    uint64_t lo = NIL_P(beg) ? 0 : NUM2UINT64(beg);
-    uint64_t hi = limit;
-    if (!NIL_P(end)) {
-        hi = NUM2UINT64(end);
-        if (excl) {
-            if (hi == 0) return false;
-            hi--;
-        }
+    if (NIL_P(beg)) {
+        rb_raise(rb_eRangeError, "cannot use beginless range with Roaring::Bitmap");
+    }
+    if (NIL_P(end)) {
+        rb_raise(rb_eRangeError, "cannot use endless range with Roaring::Bitmap");
+    }
+
+    uint64_t lo = NUM2UINT64(beg);
+    uint64_t hi = NUM2UINT64(end);
+    if (excl) {
+        if (hi == 0) return false;
+        hi--;
     }
     if (lo > hi) return false;
     if (hi > limit) {

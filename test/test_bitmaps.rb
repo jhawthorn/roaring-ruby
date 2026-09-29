@@ -168,6 +168,15 @@ module BitmapTests
     end
   end
 
+  def test_it_raises_on_open_range
+    bitmap = bitmap_class[1]
+    assert_raises(RangeError) { bitmap.or!(..5) }
+    assert_raises(RangeError) { bitmap.or!(0..) }
+    assert_raises(RangeError) { bitmap <= (0..) }
+    assert_raises(RangeError) { bitmap.intersect?(..5) }
+    assert_equal [1], bitmap.to_a
+  end
+
   def test_include
     bitmap = bitmap_class[1, 2, 5, 7]
 
@@ -322,12 +331,9 @@ module BitmapTests
     assert bitmap_class[3, 4] <= (3..4)
     assert bitmap_class[3, 4] <= (3...5)
     refute bitmap_class[3, 4] <= (3...4)
-    assert bitmap_class[3, 4] <= (..4)
-    assert bitmap_class[3, 4] <= (3..)
-    refute bitmap_class[2, 4] <= (3..)
     assert bitmap_class[max] <= (max..max)
     refute bitmap_class[max] <= (max...max)
-    assert bitmap_class[0, max] <= (0..)
+    assert bitmap_class[0, max] <= (0..max)
     assert bitmap_class[] <= (5...5)
     assert bitmap_class[] <= (5..5)
     refute bitmap_class[5] <= (5...5)
@@ -340,7 +346,6 @@ module BitmapTests
     assert bitmap_class[] < (5..5)
     refute bitmap_class[5] < (5..5)
     assert bitmap_class[5] < (5..6)
-    assert bitmap_class[0, max] < (0..)
 
     assert bitmap_class[1].freeze <= (0..3)
 
@@ -381,10 +386,7 @@ module BitmapTests
     assert bitmap_class[3, 4] >= (3...4)
     refute bitmap_class[3, 4] >= (2..4)
     refute bitmap_class[3, 4] >= (3..5)
-    refute bitmap_class[3, 4] >= (..4)
-    refute bitmap_class[3, 4] >= (3..)
-    assert bitmap_class[0..7] >= (..4)
-    assert bitmap_class[max - 2, max - 1, max] >= (max - 2..)
+    assert bitmap_class[max - 2, max - 1, max] >= (max - 2..max)
     assert bitmap_class[max] >= (max..max)
     assert bitmap_class[max] >= (max...max)
     assert bitmap_class[] >= (5...5)
@@ -400,7 +402,7 @@ module BitmapTests
     assert bitmap_class[5] > (5...5)
     refute bitmap_class[5] > (5..5)
     assert bitmap_class[5, 6] > (5..5)
-    refute bitmap_class[max] > (0..)
+    refute bitmap_class[max] > (0..max)
 
     assert bitmap_class[1].freeze >= (1..1)
 
@@ -463,18 +465,11 @@ module BitmapTests
     refute bitmap_class[3, 4].intersect?(5..6)
     refute bitmap_class[3, 4].intersect?(4...4)
     refute bitmap_class[3, 4].intersect?(5...4)
-    assert bitmap_class[3, 4].intersect?(..3)
-    refute bitmap_class[3, 4].intersect?(...3)
-    assert bitmap_class[3, 4].intersect?(4..)
-    refute bitmap_class[3, 4].intersect?(5..)
     assert bitmap_class[0].intersect?(0..0)
     refute bitmap_class[0].intersect?(0...0)
-    refute bitmap_class[0].intersect?(1..)
     assert bitmap_class[max].intersect?(max..max)
-    assert bitmap_class[max].intersect?(max..)
     refute bitmap_class[max].intersect?(max...max)
-    refute bitmap_class[max].intersect?(...max)
-    refute bitmap_class[].intersect?(0..)
+    refute bitmap_class[].intersect?(0..max)
     refute bitmap_class[].intersect?(0...0)
     assert bitmap_class[2**32 - 1].intersect?(0...2**32)
     assert bitmap_class[7].freeze.intersect?(7..7)
@@ -735,11 +730,9 @@ module BitmapTests
     assert_equal [3, 4, 5, 6], bitmap.to_a
 
     assert_equal [3, 4, 5, 6, 7], bitmap_class[0..10].and!(3..7).to_a
-    assert_equal [0, 1, 2, 3, 4], bitmap_class[0..7].and!(..4).to_a
-    assert_equal [0, 1, 2, 3], bitmap_class[0..7].and!(...4).to_a
-    assert_equal [3, max], bitmap_class[0, 1, 2, 3, max].and!(3..).to_a
+    assert_equal [3, max], bitmap_class[0, 1, 2, 3, max].and!(3..max).to_a
     assert_equal [max], bitmap_class[1, max].and!(max..max).to_a
-    assert_equal [1, max], bitmap_class[1, max].and!(0..).to_a
+    assert_equal [1, max], bitmap_class[1, max].and!(0..max).to_a
 
     assert_equal [], bitmap_class[0, 7].and!(0...0).to_a
     assert_equal [0], bitmap_class[0, 7].and!(0..0).to_a
@@ -811,10 +804,8 @@ module BitmapTests
     assert_equal (0...1000).to_a, bitmap.to_a
 
     assert_equal (0..1000).to_a, bitmap_class[1, 2].or!(0..1000).to_a
-    assert_equal (0..5).to_a, bitmap_class.new.or!(..5).to_a
-    assert_equal (0...5).to_a, bitmap_class.new.or!(...5).to_a
 
-    bitmap = bitmap_class.new.or!(max - 10..)
+    bitmap = bitmap_class.new.or!(max - 10..max)
     assert_equal 11, bitmap.size
     assert_equal max, bitmap.max
     assert_equal max - 10, bitmap.min
@@ -892,10 +883,8 @@ module BitmapTests
     assert_equal [1, 2, 5, 6], bitmap.to_a
 
     assert_equal [1, 2, 5, 6, 7], bitmap_class[1, 2, 3, 4].xor!(3..7).to_a
-    assert_equal [0, 1, 5], bitmap_class[2, 3, 4, 5].xor!(..4).to_a
-    assert_equal [0, 1, 4, 5], bitmap_class[2, 3, 4, 5].xor!(...4).to_a
 
-    bitmap = bitmap_class[max - 1].xor!(max - 10..)
+    bitmap = bitmap_class[max - 1].xor!(max - 10..max)
     assert_equal 10, bitmap.size
     assert_equal max, bitmap.max
     assert_equal max - 10, bitmap.min
@@ -963,7 +952,7 @@ module BitmapTests
     assert_equal [1, 2], result.to_a
 
     r1 = bitmap_class[1, 2, 3, 4]
-    assert_same r1, r1.subtract(3..)
+    assert_same r1, r1.subtract(3..4)
     assert_equal [1, 2], r1.to_a
   end
 
@@ -975,11 +964,9 @@ module BitmapTests
     assert_equal [0, 1, 2, 7, 8, 9, 10], bitmap.to_a
 
     assert_equal [0, 1, 2, 8, 9, 10], bitmap_class[0..10].andnot!(3..7).to_a
-    assert_equal [5, 6, 7], bitmap_class[0..7].andnot!(..4).to_a
-    assert_equal [4, 5, 6, 7], bitmap_class[0..7].andnot!(...4).to_a
-    assert_equal [0, 1, 2], bitmap_class[0, 1, 2, 3, max].andnot!(3..).to_a
+    assert_equal [0, 1, 2], bitmap_class[0, 1, 2, 3, max].andnot!(3..max).to_a
     assert_equal [1], bitmap_class[1, max].andnot!(max..max).to_a
-    assert_equal [], bitmap_class[1, max].andnot!(0..).to_a
+    assert_equal [], bitmap_class[1, max].andnot!(0..max).to_a
 
     assert_equal [0, 7], bitmap_class[0, 7].andnot!(0...0).to_a
     assert_equal [7], bitmap_class[0, 7].andnot!(0..0).to_a
