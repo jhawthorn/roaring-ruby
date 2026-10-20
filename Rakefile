@@ -29,7 +29,7 @@ task :update_roaring, [:ref] do |_t, args|
   rm_rf "tmp/CRoaring"
   branch = ref ? "--branch #{ref}" : ""
   sh "git clone --depth=1 #{branch} https://github.com/RoaringBitmap/CRoaring tmp/CRoaring"
-  sh "cd tmp/CRoaring && sh amalgamation.sh"
+  sh "cd tmp/CRoaring && bash amalgamation.sh"
   cp "tmp/CRoaring/roaring.c", "ext/roaring/roaring.c"
   cp "tmp/CRoaring/roaring.h", "ext/roaring/roaring.h"
 end
